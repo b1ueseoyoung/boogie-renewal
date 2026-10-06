@@ -3,10 +3,10 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useSetRecoilState } from 'recoil';
 import { authUserState } from '../recoil/atoms';
-import { signupUser, checkUserId, errorMessage, errorClass } from '../api/auth';
+import { signupUser, errorMessage, errorClass } from '../api/auth';
 import BaseScreenLayout from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
-import FormField, { FormStack, TextButton, SideButton, Mascot } from '../components/FormField';
+import FormField, { FormStack, TextButton, Mascot } from '../components/FormField';
 
 const ID_RULE = /^[a-z0-9_]{4,20}$/;
 
@@ -24,12 +24,6 @@ const Fields = styled.div`
     column-gap: ${({ theme }) => theme.space[4]};
   }
 `;
-
-const ID_STATUS = {
-  ok: { ok: '사용할 수 있어요' },
-  taken: { error: '이미 쓰는 아이디예요' },
-  invalid: { error: '아이디는 영문 소문자, 숫자, _ 로 4~20자예요' },
-};
 
 function validate({ userID, password, confirm, userName }) {
   const errors = {};
@@ -49,23 +43,8 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [userName, setUserName] = useState('');
-  const [idStatus, setIdStatus] = useState(null);
   const [errors, setErrors] = useState({});
   const [pending, setPending] = useState(false);
-
-  const handleCheckId = async () => {
-    const id = userID.trim();
-    if (!ID_RULE.test(id)) {
-      setIdStatus('invalid');
-      return;
-    }
-    try {
-      const { data } = await checkUserId(id);
-      setIdStatus(data.available ? 'ok' : 'taken');
-    } catch (err) {
-      setErrors((prev) => ({ ...prev, form: errorMessage(err) }));
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,12 +62,9 @@ export default function SignupScreen() {
     } catch (err) {
       const key = errorClass(err) === 'duplicate_id' ? 'userID' : 'form';
       setErrors({ [key]: errorMessage(err) });
-      if (key === 'userID') setIdStatus(null);
       setPending(false);
     }
   };
-
-  const idNote = idStatus ? ID_STATUS[idStatus] : {};
 
   return (
     <BaseScreenLayout title="처음 왔구나, 반가워요!" subTitle="아이디와 이름을 정하면 바로 시작할 수 있어요." aside={<Mascot />}>
@@ -100,18 +76,9 @@ export default function SignupScreen() {
             autoComplete="username"
             autoCapitalize="none"
             value={userID}
-            onChange={(e) => {
-              setUserID(e.target.value);
-              setIdStatus(null);
-            }}
+            onChange={(e) => setUserID(e.target.value)}
             hint="영문 소문자, 숫자, _ 로 4~20자"
-            error={errors.userID || idNote.error}
-            ok={idNote.ok}
-            side={
-              <SideButton type="button" onClick={handleCheckId} disabled={!userID.trim()}>
-                중복 확인
-              </SideButton>
-            }
+            error={errors.userID}
           />
           <FormField
             id="userName"

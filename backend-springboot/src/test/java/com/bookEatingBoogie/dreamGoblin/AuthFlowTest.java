@@ -251,18 +251,6 @@ class AuthFlowTest {
     }
 
     @Test
-    void checkUserId_reportsAvailability() throws Exception {
-        String taken = newId();
-        saveUser(taken);
-
-        JsonNode free = body(perform(get("/api/users/check").param("userID", newId())).getResponse());
-        JsonNode used = body(perform(get("/api/users/check").param("userID", taken)).getResponse());
-
-        assertTrue(free.get("available").asBoolean());
-        assertFalse(used.get("available").asBoolean());
-    }
-
-    @Test
     void otherUser_cannotSeeOrTouchCandidatesOrStories() throws Exception {
         String a = newId();
         String b = newId();

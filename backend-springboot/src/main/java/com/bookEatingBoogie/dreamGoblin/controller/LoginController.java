@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.SessionAttribute;
 
@@ -77,10 +76,6 @@ public class LoginController {
         return ResponseEntity.ok(view(user.get()));
     }
 
-    @GetMapping("/api/users/check")
-    public Map<String, Boolean> checkUserId(@RequestParam("userID") String userId) {
-        return Map.of("available", loginService.isAvailable(userId));
-    }
 
     // 세션 고정 공격을 막으려 로그인할 때마다 세션 ID를 바꾼다.
     private static void startSession(HttpServletRequest request, User user) {

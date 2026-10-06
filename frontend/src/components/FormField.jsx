@@ -1,6 +1,5 @@
 import React from 'react';
 import styled from 'styled-components';
-import RoundedButton from './RoundedButton';
 import mascotImg from '../assets/images/mainCharactor.png';
 
 const Wrap = styled.div`
@@ -15,12 +14,6 @@ const Label = styled.label`
   font-size: ${({ theme }) => theme.text.base};
   line-height: ${({ theme }) => theme.leading.tight};
   color: ${({ theme }) => theme.colors.ink};
-`;
-
-const Row = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.space[2]};
-  align-items: stretch;
 `;
 
 const Input = styled.input`
@@ -59,20 +52,6 @@ const Note = styled.p`
   font-size: ${({ theme }) => theme.text.sm};
   line-height: 1.5;
   color: ${({ theme, $tone }) => theme.colors[$tone]};
-`;
-
-export const SideButton = styled(RoundedButton)`
-  width: auto;
-  flex: none;
-  min-height: 3.25rem;
-  margin: 0;
-  padding-inline: ${({ theme }) => theme.space[4]};
-  font-size: ${({ theme }) => theme.text.base};
-  white-space: nowrap;
-
-  @media (max-width: 30rem) {
-    padding-inline: ${({ theme }) => theme.space[4]};
-  }
 `;
 
 export const TextButton = styled.button`
@@ -123,17 +102,14 @@ export const Mascot = () => (
   </MascotFrame>
 );
 
-export default function FormField({ id, label, hint, error, ok, side, ...inputProps }) {
+export default function FormField({ id, label, hint, error, ...inputProps }) {
   const noteId = `${id}-note`;
-  const note = error || ok || hint;
-  const tone = error ? 'redpen' : ok ? 'accent' : 'inkSoft';
+  const note = error || hint;
+  const tone = error ? 'redpen' : 'inkSoft';
   return (
     <Wrap>
       <Label htmlFor={id}>{label}</Label>
-      <Row>
-        <Input id={id} aria-invalid={error ? 'true' : undefined} aria-describedby={note ? noteId : undefined} {...inputProps} />
-        {side}
-      </Row>
+      <Input id={id} aria-invalid={error ? 'true' : undefined} aria-describedby={note ? noteId : undefined} {...inputProps} />
       <Note id={noteId} $tone={tone} role={error ? 'alert' : undefined}>
         {note}
       </Note>

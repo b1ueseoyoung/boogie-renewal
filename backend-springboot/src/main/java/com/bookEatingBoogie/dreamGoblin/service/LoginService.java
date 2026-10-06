@@ -112,9 +112,6 @@ public class LoginService {
         return userRepository.findById(userId);
     }
 
-    public boolean isAvailable(String userId) {
-        return isValidUserId(userId) && !userRepository.existsById(userId);
-    }
 
     private static boolean isValidUserId(String userId) {
         return userId != null && USER_ID.matcher(userId).matches();

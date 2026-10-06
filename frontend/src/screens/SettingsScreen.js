@@ -35,17 +35,6 @@ const BlockItem = styled.div`
   margin-bottom: 0.25rem;
 `;
 
-// 회원탈퇴: 위험한 동작이라 빨간펜으로 채운다(원본 값은 흰 바탕 대비 3.27:1이라 4.5:1을 넘는 redpen 5.53:1을 쓴다)
-const DangerButton = styled(RoundedButton)`
-  background: ${({ theme }) => theme.colors.redpen};
-  border-color: ${({ theme }) => theme.colors.redpen};
-  color: ${({ theme }) => theme.colors.surface};
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.redpen};
-  }
-`;
-
 const ErrorText = styled.p`
   color: ${({ theme }) => theme.colors.redpen};
   font-size: ${({ theme }) => theme.text.sm};
@@ -77,10 +66,6 @@ export default function SettingScreen() {
     navigate('/login', { replace: true });
   };
 
-  const handleDeleteAccount = () => {
-    console.log('회원탈퇴');
-  };
-
   return (
     <BaseScreenLayout
       title="설정"
@@ -94,15 +79,10 @@ export default function SettingScreen() {
           <BlockItem>아이디: {authUser?.userId}</BlockItem>
         </Block>
 
-        {/* 로그아웃 / 회원탈퇴 */}
+        {/* 로그아웃 */}
         <ButtonContainer>
           <RoundedButton onClick={handleLogout}>로그아웃</RoundedButton>
           {logoutError && <ErrorText role="alert">{logoutError}</ErrorText>}
-          <DangerButton
-            onClick={handleDeleteAccount}
-          >
-            회원탈퇴
-          </DangerButton>
         </ButtonContainer>
       </Container>
     </BaseScreenLayout>

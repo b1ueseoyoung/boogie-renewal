@@ -28,11 +28,6 @@ export function fetchMe() {
   return api.get('/me');
 }
 
-// GET /api/users/check?userID= → 200 { available }
-export function checkUserId(userID) {
-  return api.get('/api/users/check', { params: { userID } });
-}
-
 // axios 오류에서 서버의 한국어 메시지를 꺼낸다. 없으면(네트워크 끊김 등) 기본 문구
 export function errorMessage(err) {
   return err?.response?.data?.message || '문제가 생겼어요. 다시 시도해 주세요.';
