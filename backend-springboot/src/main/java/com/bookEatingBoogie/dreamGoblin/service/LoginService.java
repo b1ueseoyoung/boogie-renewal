@@ -29,19 +29,33 @@ public class LoginService {
     // ponytail: 서버 메모리에만 센다. 서버가 여러 대가 되면 DB나 Redis로 옮긴다
     private static final int MAX_FAILURES = 5;
     private static final Duration LOCK = Duration.ofMinutes(5);
-    // 다른 아이디로 계속 틀려도 기록이 끝없이 늘지 않게 한다. 넘치면 지금 잠겨 있지 않은 기록부터 지운다
-    private static final int MAX_TRACKED = 10_000;
+    // 실패 횟수는 첫 실패부터 5분 창 안에서만 센다. 기록이 많아지면 창도 잠금도 끝난 기록만 지운다(살아 있는 횟수는 지우지 않는다).
+    // 없는 아이디도 BCrypt를 한 번 계산하므로 시도 속도가 CPU로 묶여, 5분 창 안의 기록 수에도 자연히 상한이 생긴다
+    private static final Duration WINDOW = Duration.ofMinutes(5);
+    private static final int CLEANUP_AT = 10_000;
     private final Map<String, Failures> failures = new ConcurrentHashMap<>();
 
-    private record Failures(int count, Instant lockedUntil) {}
+    private record Failures(int count, Instant windowStart, Instant lockedUntil) {
+        boolean lockedAt(Instant now) {
+            return lockedUntil != null && now.isBefore(lockedUntil);
+        }
+
+        boolean expiredAt(Instant now) {
+            return !lockedAt(now) && now.isAfter(windowStart.plus(WINDOW));
+        }
+    }
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EntityManager entityManager;
     private final TransactionTemplate transactionTemplate;
 
+    // 없는 아이디에 쓸 비교용 해시. 결과는 found.isPresent()로 한 번 더 막으니 어떤 입력과 맞아도 로그인되지 않는다
+    private final String dummyHash;
+
     public LoginService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                         EntityManager entityManager, TransactionTemplate transactionTemplate) {
+        this.dummyHash = passwordEncoder.encode(java.util.UUID.randomUUID().toString());
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.entityManager = entityManager;
@@ -93,28 +107,34 @@ public class LoginService {
 
     public boolean isLocked(String userId) {
         Failures f = userId == null ? null : failures.get(userId);
-        return f != null && f.lockedUntil() != null && Instant.now().isBefore(f.lockedUntil());
+        return f != null && f.lockedAt(Instant.now());
     }
 
     public Optional<User> login(LoginRequestDTO request) {
         if (request.userId() == null || request.password() == null || tooLongForBcrypt(request.password())) {
             return Optional.empty();
         }
-        Optional<User> user = userRepository.findById(request.userId())
-                .filter(found -> passwordEncoder.matches(request.password(), found.getPassword()));
-        if (user.isPresent()) {
+        Optional<User> found = userRepository.findById(request.userId());
+        // 없는 아이디도 같은 시간을 쓰게 해 응답 시간으로 아이디가 있는지 알 수 없게 한다
+        String hash = found.map(User::getPassword).orElse(dummyHash);
+        boolean ok = passwordEncoder.matches(request.password(), hash) && found.isPresent();
+        if (ok) {
             failures.remove(request.userId());
-        } else {
-            if (failures.size() >= MAX_TRACKED) {
-                Instant now = Instant.now();
-                failures.values().removeIf(f -> f.lockedUntil() == null || now.isAfter(f.lockedUntil()));
-            }
-            failures.compute(request.userId(), (id, f) -> {
-                int count = (f == null || f.lockedUntil() != null ? 0 : f.count()) + 1;
-                return new Failures(count, count >= MAX_FAILURES ? Instant.now().plus(LOCK) : null);
-            });
+            return found;
         }
-        return user;
+        Instant now = Instant.now();
+        if (failures.size() >= CLEANUP_AT) {
+            failures.values().removeIf(f -> f.expiredAt(now));
+        }
+        failures.compute(request.userId(), (id, f) -> {
+            if (f != null && f.lockedAt(now)) {
+                return f; // 다른 요청이 건 잠금을 풀거나 늘리지 않는다
+            }
+            Failures live = (f == null || f.expiredAt(now)) ? new Failures(0, now, null) : f;
+            int count = live.count() + 1;
+            return new Failures(count, live.windowStart(), count >= MAX_FAILURES ? now.plus(LOCK) : null);
+        });
+        return Optional.empty();
     }
 
     public Optional<User> find(String userId) {
