@@ -6,5 +6,6 @@ import lombok.Data;
 @Data
 public class CharacterOutputDTO {
     private String s3_url;
+    //선택 값: /generate/character/ 응답에는 없다(null). 특징 문장은 승인 때 FeatureCardDTO로 받는다.
     private String charLook;
 }

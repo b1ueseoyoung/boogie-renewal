@@ -19,18 +19,29 @@ const Block = styled.div`
   background-color: rgba(255, 255, 255, 0.1);
   padding: 1rem;
   border-radius: 10px;
-  color: #fff;
+  color: ${({ theme }) => theme.colors.ink};
   cursor: ${props => (props.clickable ? 'pointer' : 'default')};
 `;
 
 const BlockTitle = styled.h3`
-  font-size: 1rem;
+  font-size: 1.2rem;
   margin-bottom: 0.5rem;
 `;
 
 const BlockItem = styled.div`
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   margin-bottom: 0.25rem;
+`;
+
+// 회원탈퇴: 위험한 동작이라 빨간펜으로 채운다(원본 값은 흰 바탕 대비 3.27:1이라 4.5:1을 넘는 redpen 5.53:1을 쓴다)
+const DangerButton = styled(RoundedButton)`
+  background: ${({ theme }) => theme.colors.redpen};
+  border-color: ${({ theme }) => theme.colors.redpen};
+  color: ${({ theme }) => theme.colors.surface};
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.redpen};
+  }
 `;
 
 const ButtonContainer = styled.div`
@@ -69,13 +80,11 @@ export default function SettingScreen() {
         {/* 로그아웃 / 회원탈퇴 */}
         <ButtonContainer>
           <RoundedButton onClick={handleLogout}>로그아웃</RoundedButton>
-          <RoundedButton
+          <DangerButton
             onClick={handleDeleteAccount}
-            bgColor="#ff4d4d"
-            borderColor="#ff4d4d"
           >
             회원탈퇴
-          </RoundedButton>
+          </DangerButton>
         </ButtonContainer>
       </Container>
     </BaseScreenLayout>

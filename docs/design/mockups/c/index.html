@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>방향 C — 알림장 노트 | 꿈도깨비 디자인 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background-color: var(--c-bg);
+  background-image: repeating-linear-gradient(0deg, transparent 0 1.6875rem, var(--c-rule) 1.6875rem 1.75rem);
+  color: var(--c-ink); font-family: var(--font-body);
+  font-size: var(--text-base); line-height: var(--leading-body);
+  word-break: keep-all; overflow-wrap: break-word;
+}
+h1, h2, h3, .display { font-family: var(--font-display); font-weight: 700; line-height: var(--leading-tight); margin: 0; letter-spacing: -0.015em; }
+p { margin: 0; }
+a { color: var(--c-accent); text-underline-offset: 0.2em; }
+:focus-visible { outline: 0.1875rem solid var(--c-accent); outline-offset: 0.125rem; }
+
+.page { width: min(76rem, 100%); margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
+
+.masthead { background: var(--c-surface); border: var(--border); border-radius: var(--radius-card); padding: var(--space-5); margin-bottom: var(--space-6); }
+.masthead__kicker { font-size: var(--text-sm); color: var(--c-ink-soft); font-weight: 500; }
+.masthead__name { font-size: var(--text-3xl); margin-top: var(--space-1); }
+.masthead__line { margin-top: var(--space-2); font-size: var(--text-lg); color: var(--c-ink-soft); max-width: 54ch; }
+.masthead__back { display: inline-block; margin-top: var(--space-4); font-size: var(--text-sm); }
+.swatches { display: flex; gap: var(--space-2); margin-top: var(--space-4); flex-wrap: wrap; }
+.swatch { width: 2rem; height: 2rem; border: var(--border-rule); border-radius: var(--radius-tag); }
+
+.shot { margin-bottom: var(--space-7); }
+.shot__label { display: inline-block; font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.1em; background: var(--c-ink); color: var(--c-bg); padding: var(--space-1) var(--space-3); border-radius: var(--radius-tag) var(--radius-tag) 0 0; }
+.screen { background: var(--c-surface); border: var(--border); border-radius: 0 var(--radius-card) var(--radius-card) var(--radius-card); box-shadow: var(--shadow-none); padding: var(--space-5); }
+
+/* 알림장 머리줄: 화면 제목과 진행 상황을 한 줄로 */
+.head { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: baseline; justify-content: space-between; border-bottom: var(--border); padding-bottom: var(--space-3); margin-bottom: var(--space-5); }
+.head__title { font-size: var(--text-2xl); }
+.head__meta { font-size: var(--text-sm); color: var(--c-ink-soft); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.cols { display: grid; gap: var(--space-5); grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr)); align-items: start; }
+.cols--compare { grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 21rem)); }
+.cols--art { grid-template-columns: minmax(min(17rem, 100%), 1fr) minmax(min(19rem, 100%), 1.25fr); }
+@media (max-width: 54rem) { .cols--art { grid-template-columns: 1fr; } }
+
+/* 칸: 테두리로만 구분하고 그림자는 쓰지 않는다 */
+.box { border: var(--border-rule); border-radius: var(--radius-card); background: var(--c-surface); }
+.box__tab { font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.08em; color: var(--c-ink-soft); background: var(--c-surface-2); border-bottom: var(--border-rule); padding: var(--space-2) var(--space-3); border-radius: var(--radius-card) var(--radius-card) 0 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); }
+.box__tab span { white-space: nowrap; }
+.box__body { padding: var(--space-4); }
+
+.steps { display: flex; flex-wrap: wrap; gap: 0; border: var(--border-rule); border-radius: var(--radius-tag); overflow: hidden; margin-bottom: var(--space-4); }
+.step { flex: 1 1 auto; white-space: nowrap; font-size: var(--text-sm); font-weight: 600; text-align: center; padding: var(--space-2) var(--space-2); color: var(--c-ink-soft); background: var(--c-surface-2); border-right: var(--border-rule); }
+.step:last-child { border-right: 0; }
+.step[aria-current="step"] { background: var(--c-accent); color: var(--c-accent-ink); }
+
+.lede { font-size: var(--text-base); color: var(--c-ink-soft); }
+.consent { padding: var(--space-3) var(--space-4); background: var(--c-accent-pale); border-radius: var(--radius-card); font-size: var(--text-sm); display: flex; gap: var(--space-3); align-items: flex-start; }
+.consent svg { flex: none; margin-top: 0.1rem; }
+
+.figure { border: var(--border-rule); border-radius: var(--radius-card); overflow: hidden; }
+.figure__cap { font-size: var(--text-xs); color: var(--c-ink-soft); padding: var(--space-2) var(--space-3); border-top: var(--border-rule); background: var(--c-surface-2); font-weight: 600; letter-spacing: 0.04em; }
+.art { display: block; width: 100%; height: auto; background: var(--c-surface); }
+.figure .art { max-width: 15rem; margin-inline: auto; }
+.thumb .art { max-width: 7rem; margin-inline: auto; }
+.figure--wide .art { max-width: 26rem; }
+
+.dropzone { display: grid; place-items: center; gap: var(--space-2); padding: var(--space-6) var(--space-4); border: 0.125rem dashed var(--c-pencil); border-radius: var(--radius-card); text-align: center; }
+.dropzone__hint { font-size: var(--text-lg); font-weight: 600; color: var(--c-ink-soft); }
+
+.stack { display: flex; flex-direction: column; gap: var(--space-4); }
+.row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.btn { font-family: var(--font-body); font-weight: 600; font-size: var(--text-base); min-height: var(--tap); padding: var(--space-2) var(--space-4); border: var(--border); border-radius: var(--radius-btn); background: var(--c-surface); color: var(--c-ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); line-height: 1.35; text-align: center; transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+.btn:hover { background: var(--c-surface-2); }
+.btn--primary { background: var(--c-accent); border-color: var(--c-accent); color: var(--c-accent-ink); }
+.btn--primary:hover { background: var(--c-accent-deep); border-color: var(--c-accent-deep); }
+.btn--wide { width: 100%; }
+.btn--quiet { border: var(--border-rule); color: var(--c-ink-soft); font-weight: 500; }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.btn--round { border-radius: 50%; width: var(--tap); height: var(--tap); padding: 0; flex: none; background: var(--c-accent); border-color: var(--c-accent); color: var(--c-accent-ink); }
+
+/* 후보 고르기: 고른 줄은 옅은 파란 바탕과 체크 표시 */
+.thumbs { display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fit, minmax(min(6.5rem, 45%), 1fr)); }
+.thumb { position: relative; padding: var(--space-2); background: var(--c-surface); border: var(--border-rule); border-radius: var(--radius-card); cursor: pointer; font-size: var(--text-xs); font-weight: 600; color: var(--c-ink-soft); min-height: var(--tap); transition: background-color var(--dur) var(--ease); }
+.thumb:hover { background: var(--c-surface-2); }
+.thumb[aria-pressed="true"] { background: var(--c-accent-pale); }
+.thumb__check { position: absolute; top: var(--space-2); right: var(--space-2); width: 1.375rem; height: 1.375rem; border-radius: var(--radius-tag); background: var(--c-accent); color: var(--c-accent-ink); display: grid; place-items: center; }
+.thumb__label { display: block; margin-top: var(--space-1); text-align: center; }
+
+.storybody { font-size: var(--text-story); line-height: var(--leading-body); }
+.question { font-size: var(--text-xl); font-weight: 700; margin-top: var(--space-4); padding-left: var(--space-4); border-left: 0.25rem solid var(--c-ink); }
+.choices { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
+.choice { display: flex; align-items: center; gap: var(--space-3); min-height: var(--tap); padding: var(--space-2) var(--space-3); border: var(--border-rule); border-radius: var(--radius-card); background: var(--c-surface); color: var(--c-ink); font-family: var(--font-body); font-size: var(--text-base); font-weight: 500; cursor: pointer; text-align: left; line-height: 1.4; transition: background-color var(--dur) var(--ease); }
+.choice:hover { background: var(--c-accent-pale); }
+.choice__num { flex: none; width: 1.625rem; height: 1.625rem; border: var(--border); border-radius: var(--radius-tag); display: grid; place-items: center; font-size: var(--text-sm); font-weight: 700; }
+
+.states { align-items: start; display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr)); margin-top: var(--space-5); }
+
+.waiting { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-4); background: var(--c-accent-pale); border-radius: var(--radius-card); }
+.waiting__text { font-weight: 600; font-size: var(--text-base); }
+.waiting__clock { font-size: var(--text-sm); color: var(--c-ink-soft); font-variant-numeric: tabular-nums; }
+.spinner { width: 2rem; height: 2rem; flex: none; animation: turn 1.4s linear infinite; }
+@keyframes turn { to { transform: rotate(360deg); } }
+
+/* 오류: 빨간펜으로 밑줄 긋듯 왼쪽 여백선 하나 */
+.errorcard { padding: var(--space-3) var(--space-4); background: var(--c-surface-2); border-radius: var(--radius-card); display: flex; gap: var(--space-3); align-items: flex-start; }
+.errorcard + .errorcard { margin-top: var(--space-3); }
+.errorcard svg { flex: none; margin-top: 0.1rem; }
+.errorcard__text { font-size: var(--text-sm); }
+.errorcard__head { font-weight: 700; color: var(--c-redpen); display: block; margin-bottom: var(--space-1); }
+.errorcard__time { white-space: nowrap; font-weight: 700; }
+.errorcard .btn { margin-top: var(--space-3); }
+
+/* 펼친 책: 두 쪽을 가는 선 하나로 나눈 표처럼 */
+.book { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); border: var(--border); border-radius: var(--radius-card); overflow: hidden; }
+.book__page { padding: var(--space-5); display: flex; align-items: center; justify-content: center; min-height: 14rem; }
+.book__page--art { background: var(--c-surface-2); }
+.book__page--art .art { max-width: 22rem; background: transparent; }
+.book__page--text { border-left: var(--border); }
+.book__text { font-size: var(--text-story); line-height: var(--leading-body); max-width: 28ch; }
+.reader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); border-top: var(--border-rule); padding-top: var(--space-4); }
+.reader__progress { font-size: var(--text-sm); color: var(--c-ink-soft); font-variant-numeric: tabular-nums; font-weight: 600; }
+.bar { display: block; width: 11rem; max-width: 100%; height: 0.5rem; background: var(--c-surface-2); border: var(--border-rule); border-radius: var(--radius-tag); overflow: hidden; margin-top: var(--space-1); }
+.bar__fill { display: block; height: 100%; width: 37.5%; background: var(--c-accent); }
+
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <p class="masthead__kicker">꿈도깨비 데모 흐름 · 디자인 방향 C</p>
+    <h1 class="masthead__name display">알림장 노트</h1>
+    <p class="masthead__line">줄 그은 노트에 또박또박 적어 둔 알림장. 테두리만으로 칸을 나누고, 지금 어디까지 왔는지 옆에서 보는 보호자도 한눈에 알 수 있게 합니다.</p>
+    <div class="swatches" aria-hidden="true">
+      <span class="swatch" style="background: var(--c-accent)"></span>
+      <span class="swatch" style="background: var(--c-accent-pale)"></span>
+      <span class="swatch" style="background: var(--c-redpen)"></span>
+      <span class="swatch" style="background: var(--c-pencil)"></span>
+      <span class="swatch" style="background: var(--c-surface-2)"></span>
+      <span class="swatch" style="background: var(--c-ink)"></span>
+    </div>
+    <a class="masthead__back" href="../../directions.html">세 방향 비교로 돌아가기</a>
+  </header>
+
+  <section class="shot">
+    <p class="shot__label">화면 1 · 사진 올리기</p>
+    <div class="screen" data-qa="screen-upload">
+      <div class="head">
+        <h2 class="head__title display">주인공은 어떻게 생겼나요?</h2>
+        <p class="head__meta">1 / 3 단계 · 사진</p>
+      </div>
+      <div class="steps">
+        <span class="step" aria-current="step">1 사진</span><span class="step">2 이름</span><span class="step">3 캐릭터</span>
+      </div>
+      <div class="cols cols--art">
+        <div class="box">
+          <p class="box__tab"><span>올린 사진</span><span>비어 있음</span></p>
+          <div class="box__body">
+            <div class="dropzone">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--c-pencil)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2.5l1.2-2h6.6l1.2 2H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.8"/></svg>
+              <p class="dropzone__hint">아직 사진이 없어요</p>
+              <p class="lede" style="font-size: var(--text-sm);">얼굴이 잘 보이는 사진 한 장이면 충분해요.</p>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <p class="lede">올린 사진으로 동화 속 모습을 만들어요. 다 만들면 닮았는지 같이 보고 고를 수 있어요.</p>
+          <div class="consent">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <p>주인공이 될 인물의 사진을 업로드 해주세요. 사진은 그림을 만들기 위해 OpenAI로 전송돼요. 본인이나 보호자가 동의한 사진만 올려 주세요.</p>
+          </div>
+          <button class="btn btn--primary btn--wide" type="button" data-qa="primary-btn">갤러리에서 사진 찾아오기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shot">
+    <p class="shot__label">화면 2 · 캐릭터 승인</p>
+    <div class="screen" data-qa="screen-approve">
+      <div class="head">
+        <h2 class="head__title display">이 캐릭터로 할까요?</h2>
+        <p class="head__meta">후보 3개 중 2번째 고름</p>
+      </div>
+      <p class="lede" style="margin-bottom: var(--space-4);">사진과 닮았는지 보고 골라 주세요.</p>
+      <div class="cols cols--compare">
+        <div class="figure">
+          <svg class="art" viewBox="0 0 280 260" role="img" aria-label="사람 자리 그림">
+  <g fill="none" stroke="var(--c-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M60 250c0-44 36-72 80-72s80 28 80 72" fill="var(--c-surface-2)"/>
+    <circle cx="140" cy="112" r="52"/>
+    <path d="M88 108c0-32 22-52 52-52s52 20 52 52c-13-17-29-24-52-24s-39 7-52 24z" fill="var(--c-ink)" stroke="none"/>
+    <circle cx="121" cy="118" r="4.5" fill="var(--c-ink)"/><circle cx="159" cy="118" r="4.5" fill="var(--c-ink)"/>
+    <path d="M128 140q12 11 24 0"/>
+  </g>
+</svg>
+          <p class="figure__cap">원본 사진</p>
+        </div>
+        <div class="figure">
+          <svg class="art" viewBox="0 0 280 260" role="img" aria-label="사람 자리 그림">
+  <g fill="none" stroke="var(--c-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M60 250c0-44 36-72 80-72s80 28 80 72" fill="var(--c-accent-pale)"/>
+    <circle cx="140" cy="112" r="52"/>
+    <path d="M88 108c0-32 22-52 52-52s52 20 52 52c-13-17-29-24-52-24s-39 7-52 24z" fill="var(--c-ink)" stroke="none"/>
+    <circle cx="121" cy="118" r="4.5" fill="var(--c-ink)"/><circle cx="159" cy="118" r="4.5" fill="var(--c-ink)"/>
+    <path d="M128 140q12 11 24 0"/>
+  </g>
+</svg>
+          <p class="figure__cap">동화 속 모습</p>
+        </div>
+      </div>
+      <div class="box" style="margin-top: var(--space-5);">
+        <p class="box__tab"><span>후보 중에서 고르기</span><span>2 / 3</span></p>
+        <div class="box__body">
+          <div class="thumbs">
+            <button class="thumb" type="button" aria-pressed="false"><svg class="art" viewBox="0 0 280 260" role="img" aria-label="사람 자리 그림">
+  <g fill="none" stroke="var(--c-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M60 250c0-44 36-72 80-72s80 28 80 72" fill="var(--c-surface-2)"/>
+    <circle cx="140" cy="112" r="52"/>
+    <path d="M88 108c0-32 22-52 52-52s52 20 52 52c-13-17-29-24-52-24s-39 7-52 24z" fill="var(--c-ink)" stroke="none"/>
+    <circle cx="121" cy="118" r="4.5" fill="var(--c-ink)"/><circle cx="159" cy="118" r="4.5" fill="var(--c-ink)"/>
+    <path d="M128 140q12 11 24 0"/>
+  </g>
+</svg><span class="thumb__label">첫 번째</span></button>
+            <button class="thumb" type="button" aria-pressed="true"><span class="thumb__check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><svg class="art" viewBox="0 0 280 260" role="img" aria-label="사람 자리 그림">
+  <g fill="none" stroke="var(--c-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M60 250c0-44 36-72 80-72s80 28 80 72" fill="var(--c-accent-pale)"/>
+    <circle cx="140" cy="112" r="52"/>
+    <path d="M88 108c0-32 22-52 52-52s52 20 52 52c-13-17-29-24-52-24s-39 7-52 24z" fill="var(--c-ink)" stroke="none"/>
+    <circle cx="121" cy="118" r="4.5" fill="var(--c-ink)"/><circle cx="159" cy="118" r="4.5" fill="var(--c-ink)"/>
+    <path d="M128 140q12 11 24 0"/>
+  </g>
+</svg><span class="thumb__label">두 번째</span></button>
+            <button class="thumb" type="button" aria-pressed="false"><svg class="art" viewBox="0 0 280 260" role="img" aria-label="사람 자리 그림">
+  <g fill="none" stroke="var(--c-ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M60 250c0-44 36-72 80-72s80 28 80 72" fill="var(--c-surface-2)"/>
+    <circle cx="140" cy="112" r="52"/>
+    <path d="M88 108c0-32 22-52 52-52s52 20 52 52c-13-17-29-24-52-24s-39 7-52 24z" fill="var(--c-ink)" stroke="none"/>
+    <circle cx="121" cy="118" r="4.5" fill="var(--c-ink)"/><circle cx="159" cy="118" r="4.5" fill="var(--c-ink)"/>
+    <path d="M128 140q12 11 24 0"/>
+  </g>
+</svg><span class="thumb__label">세 번째</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top: var(--space-5);">
+        <button class="btn btn--primary" type="button" data-qa="primary-btn">이 캐릭터로 할래요</button>
+        <button class="btn" type="button">다시 만들기&nbsp;(2/3)</button>
+        <button class="btn btn--quiet" type="button">다른 인물로 바꿀래요.</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="shot">
+    <p class="shot__label">화면 3 · 이야기 진행</p>
+    <div class="screen" data-qa="screen-story">
+      <div class="head">
+        <h2 class="head__title display">숲속 다람쥐와 돌다리</h2>
+        <p class="head__meta">2 / 5 장면</p>
+      </div>
+      <div class="cols cols--art">
+        <div class="figure figure--wide">
+          <svg class="art" viewBox="0 0 460 320" role="img" aria-label="장면 삽화 자리 그림">
+  <g fill="none" stroke="var(--c-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="384" cy="58" r="24"/>
+    <path d="M40 212 90 104l50 108z" fill="var(--c-accent-pale)"/><path d="M82 212v26"/>
+    <path d="M140 220 204 86l64 134z" fill="var(--c-accent-pale)"/><path d="M196 220v28"/>
+    <path d="M272 212 324 112l52 100z" fill="var(--c-accent-pale)"/><path d="M316 212v26"/>
+    <path d="M0 250h460" stroke-width="2.6"/>
+    <path d="M12 268h436" stroke="var(--c-accent)" stroke-width="5"/>
+    <ellipse cx="88" cy="268" rx="26" ry="8" fill="var(--c-surface)"/>
+    <ellipse cx="176" cy="272" rx="30" ry="9" fill="var(--c-surface)"/>
+    <ellipse cx="268" cy="268" rx="26" ry="8" fill="var(--c-surface)"/>
+    <g transform="translate(336 236)">
+      <path d="M0 44c0-24 9-40 22-40s18 18 12 40z" fill="var(--c-redpen)" stroke="var(--c-ink)"/>
+      <path d="M24 42c20-6 28-28 16-44-13 4-22 20-16 44z" fill="var(--c-redpen)" stroke="var(--c-ink)"/>
+      <circle cx="17" cy="14" r="3" fill="var(--c-ink)" stroke="none"/>
+    </g>
+  </g>
+</svg>
+          <p class="figure__cap">그림 2 · 돌다리 앞에서 만난 다람쥐</p>
+        </div>
+        <div>
+          <p class="storybody" data-qa="story-text">서영이는 반짝이는 돌다리를 건너 숲으로 들어갔어요. 나무 사이로 노란 빛이 새어 나오고, 작은 다람쥐 한 마리가 길 한가운데에 앉아 있었어요.</p>
+          <p class="question">다람쥐가 길을 막고 서 있어요. 어떻게 할까요?</p>
+          <div class="choices">
+            <button class="choice" type="button"><span class="choice__num">1</span>다람쥐에게 인사한다</button>
+            <button class="choice" type="button"><span class="choice__num">2</span>살금살금 돌아간다</button>
+            <button class="choice" type="button"><span class="choice__num">3</span>다람쥐에게 도토리를 건네준다</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="states">
+        <div class="box" data-qa="screen-waiting">
+          <p class="box__tab"><span>대기 상태</span><span>진행 중</span></p>
+          <div class="box__body">
+            <div class="waiting">
+              <svg class="spinner" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="none" stroke="var(--c-accent-track)" stroke-width="6"/><path d="M24 5a19 19 0 0 1 19 19" fill="none" stroke="var(--c-accent)" stroke-width="6" stroke-linecap="round"/></svg>
+              <div>
+                <p class="waiting__text">도깨비가 다음 장면을 그리고 있어요</p>
+                <p class="waiting__clock">12초 지났어요</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="box" data-qa="screen-error">
+          <p class="box__tab"><span>오류 카드 상태</span><span>timeout · limit</span></p>
+          <div class="box__body">
+            <div class="errorcard">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-redpen)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+              <div>
+                <span class="errorcard__head">그림이 늦어졌어요</span>
+                <p class="errorcard__text">그림이 늦어지고 있어요. 다시 시도해 볼까요?</p>
+                <button class="btn" type="button">다시 시도</button>
+              </div>
+            </div>
+            <div class="errorcard">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-redpen)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+              <div>
+                <span class="errorcard__head">오늘 몫을 다 썼어요</span>
+                <p class="errorcard__text">오늘은 도깨비가 그림을 다 그렸어요. <span class="errorcard__time">10월 6일 11:50</span> 이후에 다시 만들 수 있어요. 저장된 동화는 책장에서 볼 수 있어요.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shot">
+    <p class="shot__label">화면 4 · 읽기</p>
+    <div class="screen" data-qa="screen-reading">
+      <div class="head">
+        <h2 class="head__title display">숲속 다람쥐와 돌다리</h2>
+        <p class="head__meta">3 / 8 쪽</p>
+      </div>
+      <div class="book">
+        <div class="book__page book__page--art"><svg class="art" viewBox="0 0 400 300" role="img" aria-label="책의 그림 쪽 자리 그림">
+  <g fill="none" stroke="var(--c-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24 208 86 86l62 122z" fill="var(--c-accent-pale)"/><path d="M78 208v24"/>
+    <path d="M260 212 322 100l62 112z" fill="var(--c-accent-pale)"/><path d="M314 212v24"/>
+    <rect x="168" y="138" width="64" height="100" rx="32" fill="var(--c-accent)"/>
+    <circle cx="214" cy="190" r="4" fill="var(--c-surface)" stroke="none"/>
+    <path d="M0 238h400" stroke-width="2.6"/>
+    <circle cx="340" cy="54" r="20"/>
+    <g transform="translate(96 198)"><path d="M0 40c0-22 8-36 20-36s16 16 11 36z" fill="var(--c-redpen)" stroke="var(--c-ink)"/><circle cx="15" cy="12" r="2.6" fill="var(--c-ink)" stroke="none"/></g>
+  </g>
+</svg></div>
+        <div class="book__page book__page--text">
+          <p class="book__text">다람쥐는 도토리를 받고 눈을 동그랗게 떴어요. 그러고는 꼬리로 숲 안쪽을 가리켰어요. 그곳에는 아무도 모르는 작은 문이 있었어요.</p>
+        </div>
+      </div>
+      <div class="reader">
+        <p class="reader__progress">3 / 8 쪽<span class="bar"><span class="bar__fill"></span></span></p>
+        <div class="row">
+          <button class="btn" type="button">이전 장으로</button>
+          <button class="btn btn--round" type="button" aria-label="읽어주기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg></button>
+          <button class="btn" type="button">다음 장으로</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

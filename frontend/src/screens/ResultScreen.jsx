@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from 'styled-components';
 import { useRecoilValue } from 'recoil';
 import { storyInfoState } from '../recoil/atoms';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +7,7 @@ import BaseScreenLayout from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
 
 const ResultScreen = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const storyInfo = useRecoilValue(storyInfoState);
   const firstImage = storyInfo.img && storyInfo.img.length > 0
@@ -31,14 +33,12 @@ const ResultScreen = () => {
       imageAlt="썸네일"
     >
 
-      <div style={{ color: '#fff', marginBottom: '20px' }}>
+      <div style={{ color: theme.colors.ink, marginBottom: '20px' }}>
         [{storyInfo.title || '이야기제목10자이내?'}]
       </div>
 
       {/* 버튼 2개 (RoundedButton 재사용) */}
-      <RoundedButton onClick={handleReadNow}
-      bgColor="#ffc642"
-      borderColor="#ffc642">
+      <RoundedButton onClick={handleReadNow}>
         바로 읽어보기
       </RoundedButton>
 

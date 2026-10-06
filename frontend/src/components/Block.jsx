@@ -1,70 +1,55 @@
 import styled from "styled-components";
 import FavoriteButton from './FavoriteButton';
+import { PaperFrame } from './BaseScreenLayout';
 
 const BlockContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  width: 128px;
-  cursor: pointer;
-  position: relative;
-   overflow: hidden; 
+  gap: ${({ theme }) => theme.space[2]};
+  width: 100%;
+  min-width: 0;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
+  border-radius: ${({ theme }) => theme.radius.card};
 `;
 
-const Shadow = styled.div`
-  margin-top: -1rem;  /* 이미지와의 간격 조절 */
-  width: 60%;
-  height: 10px;
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.7), transparent 70%);
-  border-radius: 50%;
-  align-self: center;
-  pointer-events: none;
+const Frame = styled(PaperFrame)`
+  max-width: 13rem;
+  padding: ${({ theme }) => theme.space[2]};
 `;
-
 
 const ImageWrapper = styled.div`
   position: relative;
   width: 100%;
-  aspect-ratio: 2 / 3;
-  max-width: 180px;
+  aspect-ratio: 3 / 4;
   overflow: hidden;
+  border-radius: ${({ theme }) => theme.radius.tag};
 `;
 
-
 const IMG = styled.img`
+  display: block;
   width: 100%;
-  aspect-ratio: 2 / 3; /* 512:768 비율 유지 */
-  height: auto;
+  height: 100%;
   object-fit: cover;
-  border-radius: 0.3125rem;
 `;
 
 const Title = styled.div`
-  color: #000;
+  max-width: 13rem;
+  font-family: ${({ theme }) => theme.fonts.display};
+  font-size: ${({ theme }) => theme.text.lg};
+  font-weight: 600;
+  line-height: ${({ theme }) => theme.leading.tight};
+  color: ${({ theme }) => theme.colors.ink};
   text-align: center;
-  font-family: Roboto;
-  font-size: 0.625rem;
-  font-weight: 400;
-  margin-bottom: 0.3rem;
-  margin-top:1rem;
+  overflow-wrap: anywhere;
 `;
 
 const Date = styled.div`
-  color: #000;
+  font-size: ${({ theme }) => theme.text.xs};
+  color: ${({ theme }) => theme.colors.ink};
   text-align: center;
-  font-family: Roboto;
-  font-size: 0.625rem;
-  font-weight: 400;
+  white-space: nowrap;
 `;
-
-const Checkbox = styled.input`
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  transform: scale(1.2);
-`;
-
 
 export default function Block({
   blockImg,
@@ -72,26 +57,36 @@ export default function Block({
   creationDate,
   storyId,
   isEditing = false,
-  isSelected = false,
-  onToggleSelect = () => {},
   showFavorite = true,
   hideDate = false,
   hideFavorite = false,
   onClick,
-  withShadow = false,
 }) {
+  const clickable = Boolean(onClick);
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick(e);
+    }
+  };
   return (
-    <BlockContainer onClick={onClick}>
-      <ImageWrapper>
-      <IMG src={blockImg} alt={blockName || "story image"} />
-      {!hideFavorite && showFavorite && storyId && !isEditing && (
-        <FavoriteButton storyId={storyId} />
-      )}
-    </ImageWrapper>
-    {withShadow && <Shadow />}
-
+    <BlockContainer
+      $clickable={clickable}
+      onClick={onClick}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? handleKeyDown : undefined}
+    >
+      <Frame>
+        <ImageWrapper>
+          <IMG src={blockImg} alt={blockName || "story image"} />
+          {!hideFavorite && showFavorite && storyId && !isEditing && (
+            <FavoriteButton storyId={storyId} />
+          )}
+        </ImageWrapper>
+      </Frame>
       <Title>{blockName}</Title>
-      {!hideDate && <Date>{creationDate}</Date>}
+      {!hideDate && creationDate && <Date>{creationDate}</Date>}
     </BlockContainer>
   );
 }

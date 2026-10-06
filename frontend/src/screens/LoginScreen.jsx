@@ -8,7 +8,7 @@ import { loginUser } from '../api/auth';
 const LoginContainer = styled.div`
   width: 100%;
   height: 100vh;
-  background-color: #001840;
+  background-color: ${({ theme }) => theme.legacy.night};
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -29,7 +29,7 @@ const TitleWrapper = styled.div`
 `;
 
 const Title = styled.h1`
-  color: #FDFCFA;
+  color: ${({ theme }) => theme.legacy.paper};
   font-family: Pretendard;
   font-size: 3rem;
   font-weight: 700;
@@ -37,7 +37,7 @@ const Title = styled.h1`
 `;
 
 const SubTitle = styled.p`
-  color: #FDFCFA;
+  color: ${({ theme }) => theme.legacy.paper};
   font-family: Pretendard;
   font-size: 1.5rem;
   font-weight: 400;
@@ -65,7 +65,7 @@ const FieldWrapper = styled.div`
 `;
 
 const Label = styled.label`
-  color: #FDFCFA;
+  color: ${({ theme }) => theme.legacy.paper};
   font-family: Pretendard;
   font-size: 1.5rem;
   font-weight: 700;
@@ -78,9 +78,9 @@ const Input = styled.input`
   width: 100%;
   border: 1px solid rgba(253, 252, 250, 0.50);
   background: rgba(253, 252, 250, 0.20);
-  color: #fff;
+  color: ${({ theme }) => theme.colors.surface};
   &::placeholder {
-    color: #aaa;
+    color: ${({ theme }) => theme.colors.rule};
   }
 `;
 
@@ -88,8 +88,8 @@ const LoginButton = styled.button`
   width: 9.125rem;
   padding: 0.5rem 2rem;
   border-radius: 6.25rem;
-  background: #FFC642;
-  color: #1A202B;
+  background: ${({ theme }) => theme.legacy.gold};
+  color: ${({ theme }) => theme.legacy.goldInk};
   font-family: Pretendard;
   font-size: 1.5rem;
   font-weight: 700;
@@ -98,14 +98,14 @@ const LoginButton = styled.button`
 `;
 
 const BottomText = styled.div`
-  color: #FDFCFA;
+  color: ${({ theme }) => theme.legacy.paper};
   font-family: Pretendard;
   font-size: 1rem;
   margin-top: 1rem;
 `;
 
 const LinkText = styled.span`
-  color: #ffc642;
+  color: ${({ theme }) => theme.legacy.gold};
   cursor: pointer;
   margin-left: 0.25rem;
   text-decoration: underline;

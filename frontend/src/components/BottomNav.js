@@ -1,15 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-// Ionicons
 import {
   IoHomeOutline,
   IoHome,
   IoFolderOpenOutline,
   IoFolderOpen,
-  IoSettingsOutline,
-  IoSettings,
   IoPersonOutline,
   IoPerson,
   IoStarOutline,
@@ -18,56 +14,101 @@ import {
   IoEllipsisHorizontalOutline,
 } from 'react-icons/io5';
 
-/* 하단 네비게이션 바 스타일 */
+// 휴대폰: 아래에 붙은 탭 막대. 넓은 화면(56rem 이상): 위에 붙은 막대, 왼쪽에 이름, 오른쪽에 알약 메뉴
 const NavBar = styled.nav`
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 60px;
-
-  /* 사진처럼 어두운 바탕 + 흰색 아이콘/텍스트 */
-  background: #FDFCFA;
+  height: 4rem;
   display: flex;
-  justify-content: space-around;
-  align-items: center;
+  align-items: stretch;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: ${({ theme }) => theme.colors.surface};
+  border-top: ${({ theme }) => theme.border.rule};
+  box-shadow: 0 -0.5rem 1.5rem -1rem rgba(91, 64, 34, 0.25);
   z-index: 10;
 
-  /* 상단 구분선  */
-  border-top: 0.3px solid #1A202B;
+  @media (min-width: 56rem) {
+    top: 0;
+    bottom: auto;
+    height: 4.5rem;
+    align-items: center;
+    gap: ${({ theme }) => theme.space[2]};
+    padding: 0 max(${({ theme }) => theme.space[6]}, calc((100% - 74rem) / 2 + ${({ theme }) => theme.space[4]}));
+    background: ${({ theme }) => theme.colors.bg};
+    border-top: none;
+    border-bottom: ${({ theme }) => theme.border.rule};
+    box-shadow: none;
+  }
 `;
 
-/* 각 아이템(아이콘 + 라벨) */
-const NavItem = styled.div`
+const Wordmark = styled.button`
+  display: none;
+
+  @media (min-width: 56rem) {
+    display: block;
+    margin-right: auto;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: ${({ theme }) => theme.fonts.display};
+    font-size: ${({ theme }) => theme.text.xl};
+    color: ${({ theme }) => theme.colors.ink};
+
+    & > span {
+      color: ${({ theme }) => theme.colors.accent};
+    }
+  }
+`;
+
+const NavItem = styled.button`
+  flex: 1;
   display: flex;
-  flex-direction: column; /* 아이콘 위, 텍스트 아래 */
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: ${({ theme }) => theme.space[1]};
+  min-height: ${({ theme }) => theme.tap};
+  padding: 0;
+  border: none;
+  background: transparent;
   cursor: pointer;
+  font-family: ${({ theme }) => theme.fonts.display};
+  color: ${({ $active, theme }) => ($active ? theme.colors.accent : theme.colors.inkSoft)};
 
-  /* 활성/비활성 시 색상 구분 (예: 활성=흰색, 비활성=회색) */
-  color: #333;
-
-  &:hover {
-    color: #000; /* 호버 시 흰색으로 강조 */
-  }
-
-  /* 아이콘도 부모의 color를 물려받도록 */
   & svg {
     fill: currentColor;
   }
+
+  &:hover {
+    color: ${({ $active, theme }) => ($active ? theme.colors.accentDeep : theme.colors.ink)};
+  }
+
+  @media (min-width: 56rem) {
+    flex: none;
+    flex-direction: row;
+    gap: ${({ theme }) => theme.space[2]};
+    padding: ${({ theme }) => `0 ${theme.space[4]}`};
+    border-radius: ${({ theme }) => theme.radius.btn};
+    background: ${({ $active, theme }) => ($active ? theme.colors.accentPale : 'transparent')};
+
+    &:hover {
+      background: ${({ $active, theme }) => ($active ? theme.colors.accentPale : theme.colors.surface2)};
+    }
+  }
 `;
 
-/* 아이템 라벨 (텍스트) */
 const NavLabel = styled.span`
-  font-size: 12px;
-  margin-top: 4px; /* 아이콘과 텍스트 사이 간격 */
+  font-size: ${({ theme }) => theme.text.sm};
+  line-height: 1;
+
+  @media (min-width: 56rem) {
+    font-size: ${({ theme }) => theme.text.base};
+  }
 `;
 
-/**
- * 5개 탭 예시: 내 캐릭터, 내 책장, 홈, 즐겨찾기, 설정
- * path는 실제 라우트와 맞춰주세요.
- */
 const navItems = [
   {
     label: '내 캐릭터',
@@ -106,16 +147,20 @@ const BottomNav = () => {
   const navigate = useNavigate();
 
   return (
-    <NavBar>
+    <NavBar aria-label="주요 메뉴">
+      <Wordmark type="button" onClick={() => navigate('/')} aria-label="꿈도깨비 홈">
+        꿈<span>도깨비</span>
+      </Wordmark>
       {navItems.map((item) => {
-        // 현재 경로와 아이템의 path가 일치하면 활성 상태
         const isActive = location.pathname === item.path;
 
         return (
           <NavItem
             key={item.path}
+            type="button"
             onClick={() => navigate(item.path)}
-            isActive={isActive}
+            $active={isActive}
+            aria-current={isActive ? 'page' : undefined}
           >
             {isActive ? item.activeIcon : item.inactiveIcon}
             <NavLabel>{item.label}</NavLabel>

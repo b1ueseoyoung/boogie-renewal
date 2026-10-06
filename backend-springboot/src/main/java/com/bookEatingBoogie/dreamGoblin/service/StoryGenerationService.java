@@ -3,25 +3,24 @@ package com.bookEatingBoogie.dreamGoblin.service;
 import com.bookEatingBoogie.dreamGoblin.DTO.*;
 import com.bookEatingBoogie.dreamGoblin.Repository.*;
 import com.bookEatingBoogie.dreamGoblin.model.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// ponytail: FastAPI 호출이 트랜잭션 안에 있어 생성 동안 DB 연결 하나를 잡는다. 사용자가 늘면 호출을 트랜잭션 밖으로 뺀다.
 @Service
 public class StoryGenerationService {
 
-    RestTemplate restTemplate = new RestTemplate();
-
-    @Value("${fastapi.baseUrl}")
-    private String baseUrl;
-
+    @Autowired
+    private FastApiClient fastApiClient;
+    @Autowired
+    private ObjectMapper objectMapper;
     @Autowired
     private CreationRepository creationRepository;
     @Autowired
@@ -32,12 +31,11 @@ public class StoryGenerationService {
     private StoryRepository storyRepository;
     @Autowired
     private StyleRepository styleRepository;
+    @Autowired
+    private SceneRepository sceneRepository;
 
-    private final List<String> storyList = new ArrayList<>();
-    private String requestId;
-
-
-    //동화 도입부 생성 및 db에 장르, 배경을 저장하기 위한 함수
+    //동화 도입부 생성. 성공하면 creation과 scene(page 0)을 저장한다.
+    @Transactional
     public IntroReturnDTO generateSaveIntro(IntroRequestDTO storyRequest, String userId) {
 
         User user = userRepository.findByUserId(userId)
@@ -49,11 +47,9 @@ public class StoryGenerationService {
         Style place = styleRepository.findById(storyRequest.getPlace())
                 .orElseThrow(() -> new IllegalArgumentException("해당 배경이 존재하지 않습니다."));
 
-        Creation creation = new Creation();
-        //creation model에 넣기.
-        creation.setCharacters(characters);
-        creation.setGenre(genre);
-        creation.setPlace(place);
+        if (characters.getCharLook() == null) {
+            throw failure(409, "character_not_approved", "먼저 캐릭터를 골라 주세요.");
+        }
 
         //fast api로 전송할 값 dto에 넣기
         IntroInfoDTO storyInfo = new IntroInfoDTO();
@@ -61,189 +57,108 @@ public class StoryGenerationService {
         storyInfo.setGenre(storyRequest.getGenre());
         storyInfo.setPlace(storyRequest.getPlace());
         storyInfo.setImgUrl(characters.getUserImg());
+        storyInfo.setCharImgUrl(characters.getCharImg());
         storyInfo.setCharLook(characters.getCharLook());
 
-        //동화 도입부 생성 요청.
-        IntroOutputDTO response = generateIntro(storyInfo);
-        System.out.println(response);
+        //동화 도입부 생성 요청. 실패하면 예외가 나가고 아무 행도 저장하지 않는다.
+        IntroOutputDTO response = fastApiClient.post("/generate/intro/", storyInfo, IntroOutputDTO.class);
 
-        //creation db에 캐릭터 id,장르, 배경 저장.
-        int creationId = saveCreation(creation);
+        Creation creation = new Creation();
+        creation.setCharacters(characters);
+        creation.setGenre(genre);
+        creation.setPlace(place);
+        creationRepository.save(creation);
 
-        //동화 내용 저장.
-        storyList.add(response.getIntro());
+        saveScene(creation, 0, null, response.getIntro(), response.getQuestion(),
+                response.getOptions(), response.getS3_url(), response.getIllustPrompt());
 
-        //returnDTO에 내용 저장.
         IntroReturnDTO returnDTO = new IntroReturnDTO();
-        returnDTO.setCreationId(creationId);
+        returnDTO.setCreationId(creation.getCreationId());
         returnDTO.setStory(response.getIntro());
         returnDTO.setQuestion(response.getQuestion());
         returnDTO.setChoices(response.getOptions());
         returnDTO.setImgUrl(response.getS3_url());
-
-        requestId = response.getRequestId();
-        System.out.println(requestId);
-
         return returnDTO;
     }
-    // 엔딩 생성 및 전체 스토리 정제.
-    public String generateSaveStory(String choice, int charId, String userId, int creationId, int page) {
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
-        Characters characters = characterRepository.findByCharIdAndUser(charId,user)
-                .orElseThrow(() -> new IllegalArgumentException("해당 캐릭터가 존재하지 않거나 사용자의 캐릭터가 아닙니다."));
-        Creation creation = creationRepository.findByCreationIdAndCharacters(creationId,characters)
-                .orElseThrow(() -> new IllegalArgumentException("생성되지 않은 동화입니다."));
-        // 스토리 id 생성. - 스토리를 creation과 연결.
+
+    //다음 장면 생성. 저장된 장면 수가 1~4면 중간부(StoryReturnDTO), 5면 결말({"contentUrl","title"})을 돌려준다.
+    @Transactional
+    public Object generateNext(String choice, String userId) {
+        Creation creation = creationRepository.findLatestWithoutStory(userId).orElse(null);
+        long page = creation == null ? 0 : sceneRepository.countByCreation(creation);
+        if (page < 1 || page > 5) {
+            throw failure(400, "no_active_story", "진행 중인 이야기가 없어요. 처음부터 다시 시작해 주세요.");
+        }
+
+        List<Scene> scenes = sceneRepository.findByCreationOrderByPageAsc(creation);
+        Characters characters = creation.getCharacters();
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("charName", characters.getCharName());
+        request.put("charLook", characters.getCharLook());
+        request.put("imgUrl", characters.getUserImg());
+        request.put("charImgUrl", characters.getCharImg());
+        request.put("question", scenes.get(scenes.size() - 1).getQuestion());
+        request.put("choice", choice);
+        request.put("story", scenes.stream().map(Scene::getStory).toList());
+
+        if (page < 5) {
+            request.put("page", page);
+            StoryReturnDTO response = fastApiClient.post("/generate/content/", request, StoryReturnDTO.class);
+            saveScene(creation, (int) page, choice, response.getStory(), response.getQuestion(),
+                    response.getChoices(), response.getS3_url(), response.getIllustPrompt());
+            return response;
+        }
+
+        String storyId = Story.newId();
+        request.put("storyId", storyId);
+        request.put("illustUrls", scenes.stream().map(Scene::getIllustUrl).toList());
+        StoryFinishDTO response = fastApiClient.post("/generate/story/", request, StoryFinishDTO.class);
+
+        StoryFinishDTO.Ending ending = response.getEnding();
+        saveScene(creation, 5, choice, ending.getStory(), null, null, ending.getS3_url(), ending.getIllustPrompt());
+
         Story story = new Story();
+        story.setStoryId(storyId);
         story.setCreation(creation);
+        story.setContent(response.getContentUrl());
+        story.setTitle(response.getTitle());
+        story.setSummary(response.getSummary());
+        story.setCoverImg(response.getCoverImg());
         storyRepository.save(story);
 
-        String response = generateStory(choice, story.getStoryId(), page, characters);
-        storyList.clear();
-
-        story.setContent(response);
-        storyRepository.save(story);
-
-        return response;
+        return Map.of("contentUrl", response.getContentUrl(), "title", response.getTitle());
     }
 
-    //도입부 생성 함수
-    private IntroOutputDTO generateIntro(IntroInfoDTO storyInfo) {
+    private void saveScene(Creation creation, int page, String choice, String story, String question,
+                           List<String> choices, String illustUrl, String illustPrompt) {
+        Scene scene = new Scene();
+        scene.setCreation(creation);
+        scene.setPage(page);
+        scene.setChoice(choice);
+        scene.setStory(story);
+        scene.setQuestion(question);
+        scene.setChoices(toJson(choices));
+        scene.setIllustUrl(illustUrl);
+        scene.setIllustPrompt(illustPrompt);
+        sceneRepository.save(scene);
+    }
 
-        //endpoint 경로 설정.
-        String fastAPIUrl = baseUrl + "/generate/intro/";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        /*
-        fastAPI-generateStory 호출.
-        스토리 생성을 위한 장르, 배경, 캐릭터이름 전달, 생성된 동화 내용 반환.
-         */
-        HttpEntity<IntroInfoDTO> request = new HttpEntity<>(storyInfo, headers);
-
+    private String toJson(Object value) {
         try {
-            ResponseEntity<IntroOutputDTO> response = restTemplate.exchange(
-                    fastAPIUrl,
-                    HttpMethod.POST,
-                    request,
-                    IntroOutputDTO.class
-            );
-
-            // fastAPI 호출이 됐지만, 응답이 비정상적으로 반환된 경우
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new RuntimeException("FastAPI 응답 오류: 상태코드 = " + response.getStatusCode());
-            }
-
-            return response.getBody();
-
-        } catch (RestClientException e) {
-            //예외 발생 시 예외 감싸서 던짐. 요청 자체가 실패한 경우.
-            throw new RuntimeException("FastAPI 동화 생성 요청 중 오류 발생: " + e.getMessage(), e);
+            return value == null ? null : objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
         }
     }
 
-    //엔딩 생성 및 동화 정제 함수
-    private String generateStory(String choice, String storyId, int page, Characters characters) {
-        //endpoint 경로 설정.
-        String fastAPIUrl = baseUrl + "/generate/story/";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        Map<String,Object> storyInfo = Map.of(
-                "requestId", requestId,
-                "page", page,
-                "storyId", storyId,
-                "charName", characters.getCharName(),
-                "choice", choice,
-                "story", storyList,
-                "imgUrl", characters.getUserImg()
-        );
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(storyInfo, headers);
-
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    fastAPIUrl,
-                    HttpMethod.POST,
-                    request,
-                    String.class
-            );
-
-            // fastAPI 호출이 됐지만, 응답이 비정상적으로 반환된 경우
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new RuntimeException("FastAPI 응답 오류: 상태코드 = " + response.getStatusCode());
-            }
-
-            return response.getBody();
-
-        } catch (RestClientException e) {
-            //예외 발생 시 예외 감싸서 던짐. 요청 자체가 실패한 경우.
-            throw new RuntimeException("FastAPI 동화 생성 및 정제 요청 중 오류 발생: " + e.getMessage(), e);
-        }
-    }
-
-    //동화 중간부분 생성.
-    public StoryReturnDTO generateContent(String choice, int page, int charId, String userId, int creationId) {
-
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
-        Characters characters = characterRepository.findByCharIdAndUser(charId,user)
-                .orElseThrow(() -> new IllegalArgumentException("해당 캐릭터가 존재하지 않거나 사용자의 캐릭터가 아닙니다."));
-        Creation creation = creationRepository.findByCreationIdAndCharacters(creationId,characters)
-                .orElseThrow(() -> new IllegalArgumentException("생성되지 않은 동화입니다."));
-
-        //endpoint 경로 설정.
-        String fastAPIUrl = baseUrl + "/generate/content/";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        /*
-        fastAPI-generateContent 호출.
-        스토리 생성을 위한 장르, 배경, 캐릭터이름 전달, 생성된 동화 내용 반환.
-         */
-        System.out.println(requestId);
-        Map<String,Object> storyInfo = Map.of(
-                "requestId", requestId,
-                "charName", characters.getCharName(),
-                "choice", choice,
-                "page", page,
-                "imgUrl", characters.getUserImg()
-        );
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(storyInfo, headers);
-
-        try {
-            ResponseEntity<StoryReturnDTO> response = restTemplate.exchange(
-                    fastAPIUrl,
-                    HttpMethod.POST,
-                    request,
-                    StoryReturnDTO.class
-            );
-
-            // fastAPI 호출이 됐지만, 응답이 비정상적으로 반환된 경우
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new RuntimeException("FastAPI 응답 오류: 상태코드 = " + response.getStatusCode());
-            }
-
-            storyList.add(response.getBody().getStory());
-            System.out.println(response.getBody());
-            requestId = response.getBody().getRequestId();
-            System.out.println(requestId);
-
-            System.out.println("호출 완료.");
-
-            return response.getBody();
-
-        } catch (RestClientException e) {
-            //예외 발생 시 예외 감싸서 던짐. 요청 자체가 실패한 경우.
-            throw new RuntimeException("FastAPI 동화 생성 요청 중 오류 발생: " + e.getMessage(), e);
-        }
-    }
-
-    private int saveCreation(Creation creation) {
-        creationRepository.save(creation);
-        return creation.getCreationId();
+    //C-2 본문을 가진 예외. GenerationExceptionHandler가 그대로 응답으로 만든다.
+    private GenerationException failure(int status, String errorClass, String message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("errorClass", errorClass);
+        body.put("message", message);
+        body.put("retryable", false);
+        body.put("resetsAt", null);
+        return new GenerationException(status, toJson(body));
     }
 }

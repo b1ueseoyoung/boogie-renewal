@@ -1,5 +1,6 @@
 package com.bookEatingBoogie.dreamGoblin.DTO;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;
@@ -11,5 +12,7 @@ public class StoryReturnDTO {
     private String question;
     private List<String> choices;
     private String s3_url;
-    private String requestId;
+    // FastAPI 응답에서 읽기만 하고 화면 응답에는 싣지 않는다.
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String illustPrompt;
 }

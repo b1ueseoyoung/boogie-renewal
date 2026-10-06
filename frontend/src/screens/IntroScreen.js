@@ -3,101 +3,136 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import Lottie from 'react-lottie-player';
 import introAnimation from '../assets/introAnimation1.json';
+import { rise } from '../components/BaseScreenLayout';
+import RoundedButton from '../components/RoundedButton';
 
-const breakpoints = {
-  sm: '360px',
-  md: '720px',
-  lg: '1080px',
-  xl: '1440px',
-};
+// 한 화면에 첫 화면과 책 줄이 함께 들어오도록 크기를 화면 높이(vh)에도 맞춘다
+const Page = styled.main`
+  width: min(74rem, 100%);
+  margin: 0 auto;
+  padding: ${({ theme }) => `${theme.space[5]} ${theme.space[5]} 5.5rem`};
 
-const Container = styled.div`
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-`;
-
-const Emphasized = styled.span`
-  color: #D5A955;
-  font-size: 1.4rem; /* 기본 크기 */
-
-  @media (min-width: ${breakpoints.md}) {
-    font-size: 1.8rem;
-  }
-
-  @media (min-width: ${breakpoints.lg}) {
-    font-size: 2rem;
-  }
-
-  @media (min-width: ${breakpoints.xl}) {
-    font-size: 2.2rem;
+  @media (min-width: 56rem) {
+    padding: 5.75rem ${({ theme }) => theme.space[5]} ${({ theme }) => theme.space[5]};
   }
 `;
 
-const Title = styled.h1`
-  position: absolute;
-  top: 3.75rem;          /* 60px → 3.75rem */
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1.5rem;     /* 24px → 1.5rem */
-  color: #fff;
-  margin: 0;
-  text-align: center;
+const Hero = styled.section`
+  display: grid;
+  gap: ${({ theme }) => theme.space[6]};
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  animation: ${rise} ${({ theme }) => `${theme.motion.enter} ${theme.motion.out}`};
+
+  @media (max-width: 55.99rem) {
+    gap: ${({ theme }) => theme.space[4]};
+  }
+
+  @media (min-width: 56rem) {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: ${({ theme }) => theme.space[8]};
+  }
+`;
+
+const Copy = styled.div`
+  min-width: 0;
+
+  @media (max-width: 55.99rem) {
+    order: 2;
+  }
+`;
+
+const Kicker = styled.p`
+  display: inline-block;
+  padding: ${({ theme }) => `${theme.space[1]} ${theme.space[3]}`};
+  font-family: ${({ theme }) => theme.fonts.display};
+  font-size: ${({ theme }) => theme.text.base};
+  color: ${({ theme }) => theme.colors.ink};
+  background: ${({ theme }) => theme.colors.sunPale};
+  border-radius: ${({ theme }) => theme.radius.btn};
+
+  @media (max-width: 55.99rem) {
+    display: none;
+  }
+`;
+
+const HeroTitle = styled.h1`
+  margin-top: ${({ theme }) => theme.space[3]};
+  font-size: min(${({ theme }) => theme.text.hero}, 9vh);
+
+  @media (max-width: 55.99rem) {
+    margin-top: 0;
+    font-size: min(${({ theme }) => theme.text.hero}, 7vh);
+  }
+  line-height: 1.12;
   white-space: pre-line;
-  @media (min-width: ${breakpoints.md}) {
-    font-size: 1.6rem;
-    white-space: normal;
+  overflow-wrap: anywhere;
+`;
+
+const Lead = styled.p`
+  margin-top: ${({ theme }) => theme.space[4]};
+  max-width: 30ch;
+  font-size: ${({ theme }) => theme.text.lg};
+
+  @media (max-width: 55.99rem) {
+    margin-top: ${({ theme }) => theme.space[3]};
+    font-size: ${({ theme }) => theme.text.base};
+    line-height: 1.6;
   }
-  @media (min-width: ${breakpoints.lg}) {
-    font-size: 1.8rem;
+  color: ${({ theme }) => theme.colors.inkSoft};
+`;
+
+const Em = styled.span`
+  color: ${({ theme }) => theme.colors.accent};
+  font-family: ${({ theme }) => theme.fonts.display};
+`;
+
+const Actions = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.space[3]};
+  align-items: flex-start;
+  margin-top: ${({ theme }) => theme.space[5]};
+
+  /* 공용 버튼의 '붙은 두 번째 버튼 위 여백'을 이겨야 해서 버튼 컴포넌트를 두 번 적어 우선순위를 높인다 */
+  & > ${RoundedButton}, & > ${RoundedButton} + ${RoundedButton} {
+    width: auto;
+    margin: 0 0 0.25rem;
   }
-  @media (min-width: ${breakpoints.xl}) {
-    font-size: 2rem;
+
+  @media (max-width: 30rem) {
+    & > ${RoundedButton} {
+      flex: 1 1 0;
+      padding-inline: ${({ theme }) => theme.space[3]};
+    }
   }
 `;
 
-const SubTitle = styled.p`
+const Stage = styled.div`
   position: relative;
-  top: 8.125rem;         /* 130px → 8.125rem */
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.875rem;   /* 14px → 0.875rem */
-  color: #fff;
-  margin: 0;
-  margin-top: 3rem;
-  text-align: center;
-  line-height: 1.4;
-  width: 80%;
-  white-space: pre-line;
-  @media (min-width: ${breakpoints.md}) {
-    font-size: 1rem;
-    white-space: normal
+  width: min(100%, 28rem, 50vh);
+
+  @media (max-width: 55.99rem) {
+    width: min(100%, 22vh);
   }
-  @media (min-width: ${breakpoints.lg}) {
-    font-size: 1.125rem;
+
+  margin: 0 auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: ${({ theme }) => theme.colors.sunPale};
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 12%;
+    border-radius: 50%;
+    background: ${({ theme }) => theme.colors.sun};
+    opacity: 0.35;
   }
 `;
 
-const DokkaebiWrapper = styled.div`
+const Mascot = styled.div`
   position: absolute;
-  bottom: 6.25rem;       /* 100px → 6.25rem */
-  width: 22.5rem;        /* 360px → 22.5rem */
-  max-width: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-
-  @media (min-height: ${breakpoints.md}) {
-    width: 28rem;
-  }
-
-  @media (min-height: 900px) {
-    width: 32rem;
-  }
-
-  @media (min-height: 1000px) {
-    width: 36rem;
-  }
+  inset: 4% 4% 0;
 `;
 
 const HammerHotspot = styled.div`
@@ -109,12 +144,85 @@ const HammerHotspot = styled.div`
   cursor: pointer;
 `;
 
+const Shelf = styled.section`
+  margin-top: ${({ theme }) => theme.space[5]};
+  animation: ${rise} ${({ theme }) => `${theme.motion.enter} ${theme.motion.out}`} 120ms backwards;
+`;
+
+const ShelfHead = styled.div`
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: ${({ theme }) => theme.space[3]};
+  padding-bottom: ${({ theme }) => theme.space[3]};
+  border-bottom: ${({ theme }) => theme.border.thick};
+`;
+
+const ShelfTitle = styled.h2`
+  font-size: ${({ theme }) => theme.text.xl};
+`;
+
+const TextLink = styled.button`
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: ${({ theme }) => theme.fonts.display};
+  font-size: ${({ theme }) => theme.text.base};
+  color: ${({ theme }) => theme.colors.accent};
+`;
+
+// 책은 한 줄로 늘어놓고, 넘치면 옆으로 넘겨 본다
+const Books = styled.ul`
+  display: flex;
+  gap: ${({ theme }) => theme.space[5]};
+  margin-top: ${({ theme }) => theme.space[4]};
+  padding-bottom: ${({ theme }) => theme.space[2]};
+  overflow-x: auto;
+  list-style: none;
+`;
+
+const BookButton = styled.button`
+  display: block;
+  width: clamp(6.5rem, 15vh, 9rem);
+
+  @media (max-width: 55.99rem) {
+    width: clamp(5rem, 11vh, 7rem);
+  }
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+`;
+
+const Cover = styled.img`
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: ${({ theme }) => `0.375rem ${theme.radius.art} ${theme.radius.art} 0.375rem`};
+  background: ${({ theme }) => theme.colors.surface2};
+  box-shadow: ${({ theme }) => theme.shadow.art};
+`;
+
+const BookTitle = styled.span`
+  display: block;
+  margin-top: ${({ theme }) => theme.space[3]};
+  font-family: ${({ theme }) => theme.fonts.display};
+  font-size: ${({ theme }) => theme.text.base};
+  color: ${({ theme }) => theme.colors.ink};
+`;
+
+const RECENT = 4;
+
 export default function IntroScreen() {
   const navigate = useNavigate();
   const lottieRef = useRef(null);
   const [play, setPlay] = useState(false);
+  const [books, setBooks] = useState([]);
 
-  // 마운트 시 첫 프레임(0)으로 정지
   useEffect(() => {
     if (lottieRef.current) {
       lottieRef.current.pause();
@@ -122,33 +230,89 @@ export default function IntroScreen() {
     }
   }, []);
 
-  // play가 true로 바뀌면 애니메이션 재생 후 페이지 이동
   useEffect(() => {
     if (play && lottieRef.current) {
       lottieRef.current.play();
       const timer = setTimeout(() => {
         navigate('character-select');
-      }, 800); // JSON 애니메이션 길이에 맞춰 조정
+      }, 800);
       return () => clearTimeout(timer);
     }
   }, [play, navigate]);
 
+  // 최근에 만든 책. 못 불러오면 줄을 보이지 않는다(홈의 주된 일은 새 이야기 만들기다)
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/mypage/story`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data && Array.isArray(data.stories)) setBooks(data.stories.slice(-RECENT).reverse());
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const knock = () => {
+    if (!play) setPlay(true);
+  };
+
+  const open = (book) =>
+    navigate(`/reading?file=${encodeURIComponent(book.content)}&title=${encodeURIComponent(book.title)}`);
+
   return (
-    <>
-    <Container>
-      <Title>{"직접 이야기를\n만들어 봐요!"}</Title>
-      <SubTitle>이야기를 만들려면 도깨비의 <Emphasized>방망이</Emphasized>를{"\n"} 두드려 보세요!</SubTitle>
-      <DokkaebiWrapper>
-        <Lottie
-          ref={lottieRef}
-          animationData={introAnimation}
-          loop={false}
-          play={play}
-          style={{ width: '100%', height: 'auto' }}
-        />
-        <HammerHotspot onClick={() => !play && setPlay(true)} />
-      </DokkaebiWrapper>
-    </Container>
-    </>
+    <Page>
+      <Hero>
+        <Copy>
+          <Kicker>내가 주인공이 되는 그림책</Kicker>
+          <HeroTitle>{'직접 이야기를\n만들어 봐요!'}</HeroTitle>
+          <Lead>
+            사진 한 장으로 주인공을 만들고, 고르는 대로 이야기가 이어져요. 도깨비의 <Em>방망이</Em>를 두드리면 시작해요.
+          </Lead>
+          <Actions>
+            <RoundedButton $primary type="button" onClick={knock}>
+              방망이 두드리기
+            </RoundedButton>
+            <RoundedButton type="button" onClick={() => navigate('/bookshelf')}>
+              내 책장 보기
+            </RoundedButton>
+          </Actions>
+        </Copy>
+        <Stage>
+          <Mascot>
+            <Lottie
+              ref={lottieRef}
+              animationData={introAnimation}
+              loop={false}
+              play={play}
+              style={{ width: '100%', height: '100%' }}
+            />
+            <HammerHotspot onClick={knock} />
+          </Mascot>
+        </Stage>
+      </Hero>
+
+      {books.length > 0 && (
+        <Shelf aria-labelledby="recent-books">
+          <ShelfHead>
+            <ShelfTitle id="recent-books">최근에 만든 책</ShelfTitle>
+            <TextLink type="button" onClick={() => navigate('/bookshelf')}>
+              전체 보기
+            </TextLink>
+          </ShelfHead>
+          <Books>
+            {books.map((book) => (
+              <li key={book.storyId}>
+                <BookButton type="button" onClick={() => open(book)}>
+                  <Cover src={book.coverImg} alt="" />
+                  <BookTitle>{book.title}</BookTitle>
+                </BookButton>
+              </li>
+            ))}
+          </Books>
+        </Shelf>
+      )}
+    </Page>
   );
 }

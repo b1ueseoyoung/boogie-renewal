@@ -3,10 +3,10 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 const CardContainer = styled.div`
-  background-color: #fbf9f4;
-  color: #000;
-  border: 1px solid #000;
-  border-radius: 10px;
+  background-color: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.ink};
+  border: ${({ theme }) => theme.border.thick};
+  border-radius: ${({ theme }) => theme.radius.card};
   padding: 20px;
   width: 100%;
   max-width: 400px;
@@ -19,7 +19,7 @@ const CardTitle = styled.h3`
   margin: 0;
   margin-bottom: 10px;
   font-size: 16px;
-  border-bottom: 1px solid #ccc;
+  border-bottom: ${({ theme }) => theme.border.rule};
   padding-bottom: 8px;
 `;
 

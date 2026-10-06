@@ -1,0 +1,79 @@
+/* 방향 A — 종이 오리기 (Paper cut-out)
+ * 바탕: 밝은 바탕 하나만 쓴다. 운영체제 다크 모드 전환은 이번 범위가 아니다.
+ * 웹 글꼴 CDN: https://fonts.googleapis.com/css2?family=Jua&family=Gothic+A1:wght@400;500;700&display=swap
+ * 대체 글꼴: Apple SD Gothic Neo, Malgun Gothic, sans-serif
+ */
+@import url("https://fonts.googleapis.com/css2?family=Jua&family=Gothic+A1:wght@400;500;700&display=swap");
+
+:root {
+  /* ── 색 ───────────────────────────────────────────────── */
+  --c-bg: #eef2fa;          /* 연한 하늘빛 종이 (바탕) */
+  --c-surface: #ffffff;     /* 흰 종이 */
+  --c-surface-warm: #f6f1e4;/* 크라프트 종이 */
+  --c-ink: #1d2433;         /* 먹색 글자 */
+  --c-ink-soft: #4d5a73;    /* 흐린 글자 */
+  --c-line: #1d2433;        /* 오린 종이의 테두리 */
+
+  --c-accent: #2f5bff;      /* 파란 강조색 (개인 규칙, 라이트) */
+  --c-accent-pale: #e3e9ff;
+  --c-accent-ink: #ffffff;
+  --c-accent-deep: #1b3bd1;
+
+  --c-coral: #ff6b4a;       /* 보조: 산호색 색종이 */
+  --c-leaf: #2f9e6b;        /* 보조: 연두색 색종이 */
+  --c-warn: #c43a22;
+  --c-accent-track: #c3d0ff;             /* 스피너의 바닥 고리 */
+  --c-grid: rgba(29, 36, 51, 0.035);     /* 바탕의 모눈 선 */
+  --c-tape: rgba(47, 91, 255, 0.22);     /* 마스킹테이프 */
+  --c-tape-edge: rgba(29, 36, 51, 0.3);  /* 테이프의 찢긴 가장자리 */
+
+  /* ── 글꼴 ─────────────────────────────────────────────── */
+  --font-display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-body: "Gothic A1", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
+  /* ── 글자 크기 단계 (rem) ─────────────────────────────── */
+  --text-xs: 0.8125rem;   /* 13px */
+  --text-sm: 0.9375rem;   /* 15px */
+  --text-base: 1.0625rem; /* 17px */
+  --text-lg: 1.25rem;     /* 20px */
+  --text-xl: 1.5rem;      /* 24px */
+  --text-2xl: clamp(1.5rem, 1.25rem + 0.8vw, 1.9375rem);
+  --text-3xl: clamp(1.75rem, 1.375rem + 1.2vw, 2.375rem);
+  /* 이야기 글: 390px에서 18px 이상, 1280px에서 20px 이상 */
+  --text-story: clamp(1.1875rem, 1rem + 0.55vw, 1.4375rem);
+
+  --leading-tight: 1.25;
+  --leading-body: 1.75;
+
+  /* ── 간격 단계 (rem) ──────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* ── 모서리 ──────────────────────────────────────────── */
+  --radius-cut: 0.25rem;  /* 가위로 자른 듯 거의 각진 모서리 */
+  --radius-card: 0.375rem;
+  --radius-btn: 0.3125rem;
+
+  /* ── 그림자 (단단한 오프셋, 번짐 없음) ───────────────── */
+  --shadow-cut: 0.3125rem 0.3125rem 0 var(--c-line);
+  --shadow-cut-sm: 0.1875rem 0.1875rem 0 var(--c-line);
+  --shadow-soft: 0.25rem 0.25rem 0 rgba(29, 36, 51, 0.16);
+
+  /* ── 테두리 ──────────────────────────────────────────── */
+  --border: 0.1875rem solid var(--c-line);
+  --border-thin: 0.125rem solid var(--c-line);
+
+  /* ── 움직임 ──────────────────────────────────────────── */
+  --dur-fast: 110ms;
+  --dur: 180ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+
+  /* 최소 터치 크기 */
+  --tap: 2.75rem; /* 44px */
+}

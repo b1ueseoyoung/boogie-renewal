@@ -1,97 +1,108 @@
 import React, { useState, useRef } from 'react';
+import styled from 'styled-components';
 import { useRecoilState } from 'recoil';
 import { characterInfoState } from '../recoil/atoms';
 import { useNavigate } from 'react-router-dom';
 import BaseScreenLayout from '../components/BaseScreenLayout';
 import GallerySelectButton from '../components/GallerySelectButton';
-import AWS from 'aws-sdk';
+import GenerationError from '../components/GenerationError';
+import WaitingOverlay from '../components/WaitingOverlay';
+import { uploadPhoto } from '../api/files';
 
-const REGION = 'ap-northeast-2';
-const BUCKET = 'bookeating';
-const S3_BASE_URL = `https://${BUCKET}.s3.${REGION}.amazonaws.com/`;
+const Consent = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.space[3]};
+  align-items: flex-start;
+  padding: ${({ theme }) => `${theme.space[3]} ${theme.space[4]}`};
+  background: ${({ theme }) => theme.colors.accentPale};
+  border-radius: ${({ theme }) => theme.radius.card};
+  font-size: ${({ theme }) => theme.text.sm};
+  color: ${({ theme }) => theme.colors.ink};
 
-// AWS 설정 (환경변수 사용도 가능)
-AWS.config.update({
-  accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY,
-  region: REGION,
-});
+  & svg {
+    flex: none;
+    margin-top: 0.15rem;
+    color: ${({ theme }) => theme.colors.accent};
+  }
+`;
 
-const s3 = new AWS.S3();
-
-const uploadToS3 = async (file) => {
-  const key = `character/${file.name}`;
-
-  const uploadParams = {
-    Bucket: BUCKET,
-    Key: key,
-    Body: file,
-  };
-
-  return new Promise((resolve, reject) => {
-    s3.upload(uploadParams, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(`${S3_BASE_URL}${key}`);
-      }
-    });
-  });
-};
+const ShieldIcon = () => (
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+);
 
 const CharacterCreationScreen = () => {
   const navigate = useNavigate();
-  const [characterInfo, setCharacterInfo] = useRecoilState(characterInfoState);
+  const [, setCharacterInfo] = useRecoilState(characterInfoState);
   const [isFinished, setIsFinished] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const fileInputRef = useRef(null);
+  const busyRef = useRef(false);
 
-  // "갤러리에서 사진 찾아오기" 버튼 클릭 -> 파일 인풋 클릭
   const handleSelectImage = () => {
-    console.log('갤러리 버튼 클릭: 파일 선택 창 열기');
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  // 파일 선택 완료 -> 선택된 파일을 지정된 엔드포인트로 전송
+  const handleRetry = () => {
+    setUploadError(null);
+    handleSelectImage();
+  };
+
   const handleFileChange = async (e) => {
     const file = e.target.files && e.target.files[0];
-    if (!file) return;
+    e.target.value = '';
+    if (!file || busyRef.current) return;
 
+    busyRef.current = true;
+    setUploadError(null);
+    setIsUploading(true);
     try {
-      const s3Url = await uploadToS3(file);
-      console.log('S3 업로드 완료:', s3Url);
+      const photoUrl = await uploadPhoto(file);
 
-      // characterInfoState의 첫 번째 캐릭터 정보 업데이트 (이미지 URL 반영)
-      setCharacterInfo(prev => {
+      setCharacterInfo((prev) => {
         const first = prev[0] || {};
-        const updated = { ...first, userImg: s3Url };
+        const updated = { ...first, userImg: photoUrl };
         return [updated, ...prev.slice(1)];
       });
-      setIsFinished(true); 
+      setIsUploading(false);
+      setIsFinished(true);
       setTimeout(() => {
         navigate('/character-question');
       }, 1500);
     } catch (error) {
-      console.error('파일 업로드 중 오류:', error);
+      busyRef.current = false;
+      setIsUploading(false);
+      setUploadError(error);
     }
   };
-  
+
   return (
     <BaseScreenLayout
       progressText="1/3"
       progressCurrent={1}
       progressTotal={3}
       title={`주인공은 어떻게\n생겼나요?`}
-      subTitle={
-        "주인공이 될 인물의 사진을 업로드 해주세요."
-      }
-      imageSrc={null}
-    > 
-      <GallerySelectButton
-      onClick={handleSelectImage}
-      isFinished={isFinished}
-      />
+      aside={<GallerySelectButton onClick={handleSelectImage} isFinished={isFinished} />}
+    >
+      <Consent>
+        <ShieldIcon />
+        <p>주인공이 될 인물의 사진을 업로드 해주세요. 사진은 그림을 만들기 위해 OpenAI로 전송돼요. 본인이나 보호자가 동의한 사진만 올려 주세요.</p>
+      </Consent>
 
       <input
         type="file"
@@ -100,6 +111,12 @@ const CharacterCreationScreen = () => {
         style={{ display: 'none' }}
         onChange={handleFileChange}
       />
+
+      {isUploading && <WaitingOverlay message="사진을 올리고 있어요" />}
+
+      {uploadError && (
+        <GenerationError error={uploadError} onRetry={handleRetry} onClose={() => setUploadError(null)} />
+      )}
     </BaseScreenLayout>
   );
 };

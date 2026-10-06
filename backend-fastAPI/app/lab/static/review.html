@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>그림 검토</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<link rel="stylesheet" href="/lab/static/review.css">
+<script src="/lab/static/review.js" defer></script>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-check" viewBox="0 0 256 256"><path fill="currentColor" d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+  <symbol id="i-warning" viewBox="0 0 256 256"><path fill="currentColor" d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="top-inner">
+    <p class="brand">꿈도깨비 그림 검토</p>
+    <div class="progress" id="progress-box" hidden>
+      <p class="progress-text"><span id="reviewer-name"></span> · 완료 <strong id="done-count">0</strong> / 전체 <span id="total-count">0</span></p>
+      <progress id="progress-bar" value="0" max="1" aria-label="검토 진행"></progress>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="screen-name" class="screen card narrow" hidden aria-labelledby="name-title">
+    <h1 id="name-title">그림 검토</h1>
+    <p class="lead">사진 속 사람을 그린 그림을 보고 같은 사람으로 보이는지 평가해요. 그림을 어떻게 만들었는지는 보이지 않아요.</p>
+    <ul class="guide">
+      <li><b>닮음</b> 사진 속 사람과 그림이 같은 사람으로 보이는지 1~5점</li>
+      <li><b>일관성</b> 다섯 장면의 캐릭터가 같은 사람으로 보이는지 1~5점</li>
+      <li><b>책에 쓸 수 있나</b> 그림 한 장을 동화책에 그대로 써도 되는지, 문제가 있다면 어떤 문제인지</li>
+      <li><b>키보드</b> 숫자 1~5로 점수를 고르고 Enter로 넘어가요. 중간에 창을 닫아도 같은 이름으로 이어서 할 수 있어요.</li>
+    </ul>
+    <form method="get" action="/lab/review" class="field">
+      <label for="reviewer">검토자 이름</label>
+      <input id="reviewer" name="reviewer" type="text" required maxlength="100" pattern=".*\S.*" autocomplete="off" spellcheck="false" aria-describedby="reviewer-help">
+      <p class="help" id="reviewer-help">이어서 하려면 전에 쓴 이름을 똑같이 적어 주세요.</p>
+      <button type="submit" class="btn primary" id="start">시작</button>
+    </form>
+  </section>
+
+  <section id="screen-task" class="screen" hidden>
+    <article class="card task" id="task-card" aria-labelledby="question">
+      <header class="task-head">
+        <span class="badge" id="task-no">과제 1 / 1</span>
+        <h2 id="question" tabindex="-1">과제</h2>
+      </header>
+      <div class="pictures pair" id="pictures"></div>
+      <div class="panel">
+        <fieldset class="score">
+          <legend id="score-legend">점수</legend>
+          <div class="score-options">
+            <label class="score-option"><input type="radio" name="score" value="1"><kbd>1</kbd><span class="score-text"></span></label>
+            <label class="score-option"><input type="radio" name="score" value="2"><kbd>2</kbd><span class="score-text"></span></label>
+            <label class="score-option"><input type="radio" name="score" value="3"><kbd>3</kbd><span class="score-text"></span></label>
+            <label class="score-option"><input type="radio" name="score" value="4"><kbd>4</kbd><span class="score-text"></span></label>
+            <label class="score-option"><input type="radio" name="score" value="5"><kbd>5</kbd><span class="score-text"></span></label>
+          </div>
+        </fieldset>
+        <div id="picture-extra" class="extra">
+          <label class="switch">
+            <input type="checkbox" role="switch" id="usable">
+            <span class="switch-track" aria-hidden="true"><span class="switch-knob"></span></span>
+            <span class="switch-label">책에 쓸 수 있나</span>
+            <span class="switch-state"></span>
+          </label>
+          <fieldset class="tags">
+            <legend>문제가 있다면 (여러 개 가능)</legend>
+            <div class="chips">
+              <label class="chip"><input type="checkbox" name="tags" value="different_person"><svg aria-hidden="true"><use href="#i-check"/></svg><span>다른 사람</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="age_drift"><svg aria-hidden="true"><use href="#i-check"/></svg><span>나이가 달라짐</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="hair_drift"><svg aria-hidden="true"><use href="#i-check"/></svg><span>머리 모양이 달라짐</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="outfit_drift"><svg aria-hidden="true"><use href="#i-check"/></svg><span>옷이 달라짐</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="style_break"><svg aria-hidden="true"><use href="#i-check"/></svg><span>그림체가 깨짐</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="artifact"><svg aria-hidden="true"><use href="#i-check"/></svg><span>그림 결함</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="wrong_scene"><svg aria-hidden="true"><use href="#i-check"/></svg><span>장면이 다름</span></label>
+              <label class="chip"><input type="checkbox" name="tags" value="other"><svg aria-hidden="true"><use href="#i-check"/></svg><span>기타</span></label>
+            </div>
+          </fieldset>
+        </div>
+        <p class="alert" id="alert" role="alert" hidden><svg aria-hidden="true"><use href="#i-warning"/></svg><span id="alert-text"></span></p>
+        <div class="actions">
+          <button type="button" class="btn primary" id="next" disabled>다음</button>
+          <p class="hint">숫자 키 1~5로 점수를 고르고 Enter로 넘어갈 수 있어요</p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section id="screen-done" class="screen card narrow" hidden aria-labelledby="done-title">
+    <h1 id="done-title">모두 끝났어요</h1>
+    <p class="lead" id="done-text"></p>
+    <a class="btn quiet" href="/lab/review">다른 이름으로 시작</a>
+  </section>
+
+  <p class="alert" id="load-error" role="alert" hidden><svg aria-hidden="true"><use href="#i-warning"/></svg><span id="load-error-text"></span></p>
+  <noscript><p class="card narrow">이 화면은 자바스크립트가 켜져 있어야 해요.</p></noscript>
+</main>
+</body>
+</html>

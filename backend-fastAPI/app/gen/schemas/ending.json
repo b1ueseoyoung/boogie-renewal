@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "story": {
+      "type": "string"
+    },
+    "illustration": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "story",
+    "illustration"
+  ],
+  "additionalProperties": false
+}

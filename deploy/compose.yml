@@ -1,0 +1,65 @@
+# 꿈도깨비 데모 배포: 저장된 동화 + 새로 만들면 가짜 그림(GEN_FAKE=1, OpenAI·codex 호출 없음).
+# 값은 deploy/.env(커밋하지 않음). 만드는 법은 docs/DEPLOY-ec2.md.
+name: kkum-demo
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: dreamgoblin
+      MYSQL_USER: dreamgoblin
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?deploy/.env에 MYSQL_PASSWORD가 필요합니다}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?deploy/.env에 MYSQL_ROOT_PASSWORD가 필요합니다}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./seed/dump.sql:/docker-entrypoint-initdb.d/dump.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      retries: 60
+    restart: unless-stopped
+  fastapi:
+    image: kkum/fastapi:demo
+    build: ../backend-fastAPI
+    environment:
+      GEN_FAKE: "1"
+      GEN_PREFETCH: "0"
+      FILE_BASE_URL: /fa/files
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 5s
+      retries: 30
+    restart: unless-stopped
+  spring:
+    image: kkum/spring:demo
+    build: ../backend-springboot
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:mysql://mysql:3306/dreamgoblin?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      DB_USER: dreamgoblin
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      FASTAPI_BASE_URL: http://fastapi:8000
+    depends_on:
+      mysql: {condition: service_healthy}
+      fastapi: {condition: service_healthy}
+    restart: unless-stopped
+  web:
+    image: kkum/web:demo
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}  # 서버에서는 ec2-push.sh가 <ip>.sslip.io로 넣는다(자동 HTTPS)
+      DEMO_USER: ${DEMO_USER:?deploy/.env에 DEMO_USER가 필요합니다}
+      DEMO_PASSWORD_HASH: ${DEMO_PASSWORD_HASH:?deploy/.env에 DEMO_PASSWORD_HASH가 필요합니다}
+    ports:
+      - "${HTTP_BIND:-80}:80"
+      - "${HTTPS_BIND:-443}:443"
+    volumes:
+      - caddy-data:/data
+    depends_on: [spring]
+    restart: unless-stopped
+volumes:
+  mysql-data:
+  caddy-data:

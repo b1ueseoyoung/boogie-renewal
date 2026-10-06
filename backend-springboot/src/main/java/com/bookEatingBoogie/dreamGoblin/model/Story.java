@@ -49,13 +49,17 @@ public class Story {
     private String content;
 
 
+    public static String newId() {
+        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+        // 길이를 4로 지정해 4글자 ID 생성
+        String randPart = NanoIdUtils.randomNanoId(NanoIdUtils.DEFAULT_NUMBER_GENERATOR, NanoIdUtils.DEFAULT_ALPHABET, 4).toUpperCase();
+        return datePart + randPart;
+    }
+
     @PrePersist
     public void generateId() {
         if (this.storyId == null) {
-            String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
-            // 길이를 4로 지정해 4글자 ID 생성
-            String randPart = NanoIdUtils.randomNanoId(NanoIdUtils.DEFAULT_NUMBER_GENERATOR, NanoIdUtils.DEFAULT_ALPHABET, 4).toUpperCase();
-            this.storyId = datePart + randPart;
+            this.storyId = newId();
         }
     }
 }

@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "properties": {
+    "intro": {
+      "type": "string"
+    },
+    "question": {
+      "type": "string"
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "illustration": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "intro",
+    "question",
+    "options",
+    "illustration"
+  ],
+  "additionalProperties": false
+}

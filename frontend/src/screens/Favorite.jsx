@@ -8,12 +8,13 @@ import Empty from '../components/Empty';
 import PopCard from '../components/PopCard';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import defaultImg from '../assets/images/testImg.png';
 
 const FavoriteContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.surface};
   min-height: 100vh;
 `;
 
@@ -56,6 +57,15 @@ const Overlay = styled.div`
   z-index: 1000;
 `;
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}년 ${month}월 ${day}일`;
+};
+
 export default function Favorite() {
   const allStories = useRecoilValue(storyInfoState);
   const favoriteIds = useRecoilValue(favoriteStoryIdsState);
@@ -63,16 +73,11 @@ export default function Favorite() {
   const navigate = useNavigate();
 
   const favoriteStories = Array.isArray(allStories)
-    ? allStories.filter(story => favoriteIds.includes(story.id))
+    ? allStories.filter(story => favoriteIds.includes(story.storyId))
     : [];
 
-  const handleBlockClick = (story) => {
-    setSelectedStory(story);
-  };
-
-  const handleClosePopup = () => {
-    setSelectedStory(null);
-  };
+  const handleBlockClick = (story) => setSelectedStory(story);
+  const handleClosePopup = () => setSelectedStory(null);
 
   return (
     <FavoriteContainer>
@@ -80,12 +85,12 @@ export default function Favorite() {
       <ContentContainer>
         {favoriteStories.length > 0 ? (
           favoriteStories.map((story) => (
-            <StoryWrapper key={story.id} onClick={() => handleBlockClick(story)}>
+            <StoryWrapper key={story.storyId} onClick={() => handleBlockClick(story)}>
               <Block
-                blockImg={story.img?.[0] || story.cover}
+                blockImg={story.coverImg || defaultImg}
                 blockName={story.title}
-                creationDate={story.date}
-                storyId={story.id}
+                creationDate={formatDate(story.creationDate)}
+                storyId={story.storyId}
                 showFavorite={true}
               />
             </StoryWrapper>
@@ -103,20 +108,18 @@ export default function Favorite() {
       {selectedStory && (
         <Overlay onClick={handleClosePopup}>
           <PopCard
-            imageSrc={selectedStory.img?.[0] || selectedStory.cover}
+            imageSrc={selectedStory.coverImg || defaultImg}
             cardTitle={selectedStory.title}
-            subTitle={selectedStory.date}
+            subTitle={formatDate(selectedStory.creationDate)}
             description={selectedStory.summary}
             positiveBtnText="열기"
             negativeBtnText="닫기"
             onPositiveClick={() => {
               handleClosePopup();
-              navigate("/reading");
+              navigate(`/reading?file=${encodeURIComponent(selectedStory.content)}`);
             }}
             onNegativeClick={handleClosePopup}
             titleFontSize="1.1rem"
-            subFontSize="0.9rem"
-            descriptionFontSize="0.8rem"
           />
         </Overlay>
       )}

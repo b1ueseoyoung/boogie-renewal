@@ -1,6 +1,5 @@
 package com.bookEatingBoogie.dreamGoblin.controller;
 
-import com.bookEatingBoogie.dreamGoblin.DTO.IntroReturnDTO;
 import com.bookEatingBoogie.dreamGoblin.DTO.IntroRequestDTO;
 import com.bookEatingBoogie.dreamGoblin.DTO.StoryRequestDTO;
 import com.bookEatingBoogie.dreamGoblin.DTO.StoryReturnDTO;
@@ -13,72 +12,29 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+// 생성 실패(GenerationException)는 잡지 않는다: GenerationExceptionHandler가 상태 코드와 본문을 그대로 응답으로 만든다.
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3100")
 public class StoryGenerationController {
 
     @Autowired
     private StoryGenerationService storyGenerationService;
 
-    private int page;
-    private int charId;
-    private int creationId;
-
     //도입부 생성 컨트롤러
     @PostMapping("/intro")
     public ResponseEntity<?> requestIntro(@RequestBody IntroRequestDTO request) {
-
-        page = 0;
-
-        try {
-            IntroReturnDTO response = storyGenerationService.generateSaveIntro(request, "user");
-            charId = request.getCharId();
-            creationId = response.getCreationId();
-            page++;
-            //동화 도입부, 질문, 선택지, creationId, 삽화 이미지 경로 반환.
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            //응답 실패 시 예외처리.
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("도입부 생성 실패: "+e.getMessage());
-        }
+        //동화 도입부, 질문, 선택지, creationId, 삽화 이미지 경로 반환.
+        return ResponseEntity.ok(storyGenerationService.generateSaveIntro(request, "user"));
     }
 
-    //중간부 및 엔딩(생성 후 정제) 생성 컨트롤러
+    //중간부 및 엔딩(생성 후 정제) 생성 컨트롤러. 몇 번째 장면인지는 서비스가 DB의 장면 수로 정한다.
     @PostMapping("/story")
     public ResponseEntity<?> requestStory(@RequestBody StoryRequestDTO request) {
-        if (page == 0 || request.getChoice() == null) { return ResponseEntity.badRequest().build();}
+        if (request.getChoice() == null) { return ResponseEntity.badRequest().build();}
 
-        //page가 0~5사이일 경우 중간부 생성 함수 호출.
-        if (page < 5 && page > 0) {
-            System.out.println("page = " + page);
-            try {
-                StoryReturnDTO response = storyGenerationService.generateContent(request.getChoice(), page, charId,"user", creationId);
-                page++;
-                // 동화 중간부, 질문, 선택지, 삽화 이미지 경로 반환.
-                return ResponseEntity.ok(response);
-            } catch (RuntimeException e) {
-                //응답 실패 시 예외처리.
-                e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("중간부 생성 실패: " + e.getMessage());
-            }
-        } else if (page == 5) { //page=0이면 엔딩 생성 및 정제 함수 호출.
-            System.out.println("page = " + page);
-            //전체 스토리 생성.
-            try {
-                String contentUrl = storyGenerationService.generateSaveStory(request.getChoice(), charId, "user", creationId, page);
-
-                return ResponseEntity.status(HttpStatus.CREATED).build();
-            } catch (RuntimeException e) {
-            //응답 실패 시 예외처리.
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("동화 생성 및 정제 실패: " + e.getMessage());
-            }
-        }
-
-        return null;
+        Object response = storyGenerationService.generateNext(request.getChoice(), "user");
+        //중간부면 200, 결말이면 201.
+        HttpStatus status = response instanceof StoryReturnDTO ? HttpStatus.OK : HttpStatus.CREATED;
+        return ResponseEntity.status(status).body(response);
     }
 }

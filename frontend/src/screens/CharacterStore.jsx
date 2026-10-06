@@ -13,8 +13,9 @@ const CharacterContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #fff;
+  background-color: ${({ theme }) => theme.colors.surface};
   min-height: 100vh;
+  height: 300vh;
 `;
 
 const ContentContainer = styled.div`
@@ -25,7 +26,31 @@ const ContentContainer = styled.div`
   padding: 0.875rem 1rem 1.5rem 0.875rem;
   gap: 1rem;
   width: 100%;
-  
+
+  @media (max-width: 360px) {
+    gap: 0.75rem;
+    padding: 0.5rem;
+  }
+
+  @media (min-width: 361px) and (max-width: 719px) {
+    gap: 0.875rem;
+    padding: 0.75rem;
+  }
+
+  @media (min-width: 720px) and (max-width: 1079px) {
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+  }
+
+  @media (min-width: 1080px) and (max-width: 1439px) {
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+  }
+
+  @media (min-width: 1440px) {
+    gap: 1.25rem;
+    padding: 1.5rem 2rem;
+  }
 `;
 
 const Overlay = styled.div`
@@ -98,15 +123,10 @@ export default function CharacterStore() {
         <Overlay onClick={handleClosePopup}>
           <PopCard
             imageSrc={selectedCharacter.charImg || defaultImg}
-            imageSize="150px"
+            imageSize="13rem"
             cardTitle={selectedCharacter.charName}
-            subTitle={`이름: ${selectedCharacter.charName}`}
-            description={selectedCharacter.charNote}
             positiveBtnText="닫기"
             onPositiveClick={handleClosePopup}
-            titleFontSize="1.1rem"
-            subFontSize="0.9rem"
-            descriptionFontSize="0.8rem"
           />
         </Overlay>
       )}

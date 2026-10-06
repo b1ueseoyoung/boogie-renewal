@@ -10,7 +10,6 @@ public class IntroOutputDTO {
     private String intro;
     private String question;
     private List<String> options;
-    private String charLook;
     private String s3_url;
-    private String requestId;
+    private String illustPrompt;
 }

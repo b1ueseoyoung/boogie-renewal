@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>방향 A — 종이 오리기 | 꿈도깨비 디자인 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background-color: var(--c-bg);
+  background-image: repeating-linear-gradient(90deg, var(--c-grid) 0 1px, transparent 1px 1.25rem),
+                    repeating-linear-gradient(0deg, var(--c-grid) 0 1px, transparent 1px 1.25rem);
+  color: var(--c-ink); font-family: var(--font-body);
+  font-size: var(--text-base); line-height: var(--leading-body);
+  word-break: keep-all; overflow-wrap: break-word;
+}
+h1, h2, h3, .display { font-family: var(--font-display); font-weight: 400; line-height: var(--leading-tight); margin: 0; }
+p { margin: 0; }
+a { color: var(--c-accent); text-underline-offset: 0.2em; }
+:focus-visible { outline: 0.1875rem solid var(--c-accent); outline-offset: 0.1875rem; }
+
+.page { width: min(74rem, 100%); margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
+
+.masthead { position: relative; border: var(--border); background: var(--c-surface-warm); box-shadow: var(--shadow-cut); border-radius: var(--radius-card); padding: var(--space-5); margin-bottom: var(--space-7); }
+.masthead__kicker { font-size: var(--text-sm); color: var(--c-ink-soft); }
+.masthead__name { font-size: var(--text-3xl); margin-top: var(--space-1); }
+.masthead__line { margin-top: var(--space-2); font-size: var(--text-lg); color: var(--c-ink-soft); max-width: 46ch; }
+.masthead__back { display: inline-block; margin-top: var(--space-4); font-size: var(--text-sm); }
+.swatches { display: flex; gap: var(--space-2); margin-top: var(--space-4); flex-wrap: wrap; }
+.swatch { width: 2.25rem; height: 2.25rem; border: var(--border-thin); border-radius: var(--radius-cut); }
+
+.shot { margin-bottom: var(--space-8); }
+.shot__label { display: inline-block; font-family: var(--font-display); font-size: var(--text-sm); letter-spacing: 0.04em; background: var(--c-ink); color: var(--c-bg); padding: var(--space-1) var(--space-3); border-radius: var(--radius-cut) var(--radius-cut) 0 0; }
+.screen { border: var(--border); background: var(--c-surface); border-radius: 0 var(--radius-card) var(--radius-card) var(--radius-card); box-shadow: var(--shadow-cut); padding: var(--space-6) var(--space-5); }
+
+.steps { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-5); }
+.step { font-family: var(--font-display); font-size: var(--text-sm); padding: var(--space-1) var(--space-3); border: var(--border-thin); border-radius: var(--radius-cut); background: var(--c-surface); color: var(--c-ink-soft); }
+.step[aria-current="step"] { background: var(--c-accent); border-color: var(--c-accent); color: var(--c-accent-ink); }
+
+.title { font-size: var(--text-3xl); margin-bottom: var(--space-3); }
+.title--mid { font-size: var(--text-2xl); }
+.lede { font-size: var(--text-base); color: var(--c-ink-soft); max-width: 46ch; }
+.consent { margin-top: var(--space-4); padding: var(--space-4); background: var(--c-accent-pale); border: var(--border-thin); border-radius: var(--radius-cut); font-size: var(--text-sm); color: var(--c-ink); display: flex; gap: var(--space-3); align-items: flex-start; }
+.consent svg { flex: none; margin-top: 0.15rem; }
+
+.stack { display: flex; flex-direction: column; gap: var(--space-4); }
+.row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: stretch; }
+.split { display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr)); align-items: start; }
+.split--art { grid-template-columns: minmax(min(18rem, 100%), 1.1fr) minmax(min(17rem, 100%), 1fr); }
+.split--compare { grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 20rem)); justify-content: center; }
+@media (max-width: 52rem) { .split--art { grid-template-columns: 1fr; } }
+
+/* 종이 조각 틀 — 살짝 돌아간 종이에 마스킹테이프를 붙인 모양 */
+.frame { position: relative; padding: var(--space-3); background: var(--c-surface-warm); border: var(--border); border-radius: var(--radius-cut); box-shadow: var(--shadow-cut); }
+.frame--portrait { max-width: 20rem; margin-inline: auto; }
+.frame--tilt { transform: rotate(-1.4deg); }
+.frame--tilt-r { transform: rotate(1.1deg); }
+.frame::before { content: ""; position: absolute; top: -0.75rem; left: 50%; width: 5.5rem; height: 1.5rem; transform: translateX(-50%) rotate(-2.5deg); background: var(--c-tape); border-left: 0.125rem dashed var(--c-tape-edge); border-right: 0.125rem dashed var(--c-tape-edge); }
+.frame__caption { display: block; margin-top: var(--space-2); font-family: var(--font-display); font-size: var(--text-sm); color: var(--c-ink-soft); text-align: center; }
+.art { display: block; width: 100%; height: auto; border-radius: var(--radius-cut); }
+
+.dropzone { display: grid; place-items: center; gap: var(--space-3); padding: var(--space-6) var(--space-4); background: var(--c-surface-warm); border: 0.1875rem dashed var(--c-accent); border-radius: var(--radius-cut); text-align: center; }
+.dropzone__hint { font-family: var(--font-display); font-size: var(--text-lg); color: var(--c-ink-soft); }
+
+.btn { font-family: var(--font-display); font-size: var(--text-lg); min-height: var(--tap); padding: var(--space-2) var(--space-5); border: var(--border); border-radius: var(--radius-btn); background: var(--c-surface); color: var(--c-ink); cursor: pointer; box-shadow: var(--shadow-cut-sm); transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), background-color var(--dur) var(--ease); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); text-align: center; line-height: 1.3; }
+.btn:hover { transform: translate(-0.0625rem, -0.0625rem); box-shadow: var(--shadow-cut); }
+.btn:active { transform: translate(0.125rem, 0.125rem); box-shadow: none; }
+.btn--primary { background: var(--c-accent); border-color: var(--c-accent); color: var(--c-accent-ink); }
+.btn--primary:hover { background: var(--c-accent-deep); border-color: var(--c-accent-deep); }
+.btn--wide { width: 100%; }
+.btn--quiet { border-style: dashed; box-shadow: none; font-size: var(--text-base); color: var(--c-ink-soft); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+.btn--round { border-radius: 50%; width: var(--tap); height: var(--tap); min-height: var(--tap); padding: 0; background: var(--c-accent); border-color: var(--c-accent); color: var(--c-accent-ink); flex: none; }
+
+/* 후보 썸네일 — 고른 것은 옅은 파란 바탕과 체크 표시 */
+.thumbs { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(min(7.5rem, 45%), 11rem)); justify-content: start; }
+.thumb { position: relative; padding: var(--space-2); background: var(--c-surface); border: var(--border-thin); border-radius: var(--radius-cut); cursor: pointer; font-family: var(--font-display); font-size: var(--text-sm); color: var(--c-ink-soft); min-height: var(--tap); box-shadow: var(--shadow-cut-sm); }
+.thumb[aria-pressed="true"] { background: var(--c-accent-pale); }
+.thumb__check { position: absolute; top: var(--space-2); right: var(--space-2); width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--c-accent); color: var(--c-accent-ink); display: grid; place-items: center; }
+.thumb__label { display: block; margin-top: var(--space-1); text-align: center; }
+
+.storybody { font-size: var(--text-story); line-height: var(--leading-body); }
+.question { font-family: var(--font-display); font-size: var(--text-xl); margin-top: var(--space-4); padding: var(--space-3) var(--space-4); background: var(--c-accent-pale); border-radius: var(--radius-cut); }
+.choices { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); margin-top: var(--space-5); }
+.choice { font-family: var(--font-body); font-weight: 700; font-size: var(--text-base); min-height: var(--tap); padding: var(--space-3) var(--space-4); border: var(--border-thin); border-radius: var(--radius-cut); background: var(--c-surface-warm); color: var(--c-ink); cursor: pointer; box-shadow: var(--shadow-cut-sm); text-align: left; line-height: 1.45; transition: transform var(--dur-fast) var(--ease), background-color var(--dur) var(--ease); display: flex; gap: var(--space-2); align-items: center; }
+.choice:hover { background: var(--c-accent-pale); transform: translate(-0.0625rem, -0.0625rem); }
+.choice:active { transform: translate(0.125rem, 0.125rem); box-shadow: none; }
+.choice__num { font-family: var(--font-display); color: var(--c-accent-ink); background: var(--c-accent); width: 1.75rem; height: 1.75rem; flex: none; border-radius: var(--radius-cut); display: grid; place-items: center; font-size: var(--text-sm); }
+
+.states { display: grid; gap: var(--space-5); grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr)); margin-top: var(--space-6); padding-top: var(--space-5); border-top: 0.125rem dashed var(--c-ink-soft); }
+.statebox__title { font-family: var(--font-display); font-size: var(--text-base); color: var(--c-ink-soft); margin-bottom: var(--space-3); }
+
+.waiting { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); padding: var(--space-5); background: var(--c-accent-pale); border: var(--border-thin); border-radius: var(--radius-cut); }
+.waiting__text { font-family: var(--font-display); font-size: var(--text-lg); }
+.waiting__clock { font-size: var(--text-base); color: var(--c-ink-soft); }
+.spinner { width: 2.5rem; height: 2.5rem; flex: none; animation: turn 1.6s linear infinite; }
+@keyframes turn { to { transform: rotate(360deg); } }
+
+.errorcard { padding: var(--space-4); background: var(--c-surface); border: 0.1875rem solid var(--c-warn); border-radius: var(--radius-cut); box-shadow: 0.25rem 0.25rem 0 var(--c-warn); }
+.errorcard + .errorcard { margin-top: var(--space-4); }
+.errorcard__head { display: flex; gap: var(--space-3); align-items: flex-start; }
+.errorcard__head svg { flex: none; margin-top: 0.15rem; }
+.errorcard__text { font-size: var(--text-base); }
+.errorcard__time { white-space: nowrap; }
+.errorcard .btn { margin-top: var(--space-4); }
+
+/* 펼친 책 — 가운데 접힘선을 두고 그림 쪽과 글 쪽이 마주 본다 */
+.book { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr)); border: var(--border); border-radius: var(--radius-card); overflow: hidden; box-shadow: var(--shadow-cut); }
+.book__page { padding: var(--space-5); display: flex; align-items: center; justify-content: center; min-height: 16rem; }
+.book__page--art { background: var(--c-surface-warm); }
+.book__page--art .art { max-width: 24rem; }
+.book__page--text { background: var(--c-surface); border-left: 0.1875rem solid var(--c-ink); }
+.book__text { font-size: var(--text-story); line-height: var(--leading-body); text-align: center; max-width: 26ch; }
+.reader { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-3); margin-top: var(--space-5); }
+.reader__progress { flex: 0 0 100%; text-align: center; max-width: 24rem; margin-inline: auto; font-size: var(--text-sm); color: var(--c-ink-soft); }
+.bar { display: block; width: 100%; max-width: 24rem; margin-inline: auto; height: 0.625rem; background: var(--c-surface-warm); border: var(--border-thin); border-radius: var(--radius-cut); overflow: hidden; margin-top: var(--space-2); }
+.bar__fill { display: block; height: 100%; width: 37.5%; background: var(--c-accent); }
+
+/* 좁은 화면(390px 폰, 글자 150%)에서는 종이 여백을 줄여 버튼 글자가 낱말 단위로만 줄바꿈되게 한다 */
+@media (max-width: 30rem) {
+  .screen { padding-inline: var(--space-4); }
+  .btn { padding-inline: var(--space-4); }
+}
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <p class="masthead__kicker">꿈도깨비 데모 흐름 · 디자인 방향 A</p>
+    <h1 class="masthead__name display">종이 오리기</h1>
+    <p class="masthead__line">색종이를 오려 붙인 공작 시간. 각진 종이 조각을 겹쳐 붙이고 또렷한 그림자로 화면을 쌓습니다.</p>
+    <div class="swatches" aria-hidden="true">
+      <span class="swatch" style="background: var(--c-accent)"></span>
+      <span class="swatch" style="background: var(--c-accent-pale)"></span>
+      <span class="swatch" style="background: var(--c-coral)"></span>
+      <span class="swatch" style="background: var(--c-leaf)"></span>
+      <span class="swatch" style="background: var(--c-surface-warm)"></span>
+      <span class="swatch" style="background: var(--c-ink)"></span>
+    </div>
+    <a class="masthead__back" href="../../directions.html">세 방향 비교로 돌아가기</a>
+  </header>
+
+  <section class="shot">
+    <p class="shot__label">화면 1 · 사진 올리기</p>
+    <div class="screen" data-qa="screen-upload">
+      <div class="steps">
+        <span class="step" aria-current="step">1 / 3 사진</span>
+        <span class="step">2 / 3 이름</span>
+        <span class="step">3 / 3 캐릭터</span>
+      </div>
+      <div class="split split--art">
+        <div class="dropzone">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2.5l1.2-2h6.6l1.2 2H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.8"/></svg>
+          <p class="dropzone__hint">아직 사진이 없어요</p>
+          <p class="lede" style="font-size: var(--text-sm);">얼굴이 잘 보이는 사진 한 장이면 충분해요.</p>
+        </div>
+        <div class="stack">
+          <h2 class="title display">주인공은 어떻게<br>생겼나요?</h2>
+          <p class="lede">올린 사진으로 동화 속 모습을 만들어요. 다 만들면 닮았는지 같이 보고 고를 수 있어요.</p>
+          <div class="consent">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <p>주인공이 될 인물의 사진을 업로드 해주세요. 사진은 그림을 만들기 위해 OpenAI로 전송돼요. 본인이나 보호자가 동의한 사진만 올려 주세요.</p>
+          </div>
+          <button class="btn btn--primary btn--wide" type="button" data-qa="primary-btn">갤러리에서 사진 찾아오기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shot">
+    <p class="shot__label">화면 2 · 캐릭터 승인</p>
+    <div class="screen" data-qa="screen-approve">
+      <h2 class="title title--mid display">이 캐릭터로 할까요?</h2>
+      <p class="lede">사진과 닮았는지 보고 골라 주세요.</p>
+      <div class="split split--compare" style="margin-top: var(--space-5);">
+        <div class="frame frame--portrait frame--tilt">
+          <svg class="art" viewBox="0 0 300 300" role="img" aria-label="사람 자리 그림">
+  <rect width="300" height="300" fill="#dce4f5"/>
+  <path d="M46 300c0-58 46-96 104-96s104 38 104 96z" fill="#2f5bff"/>
+  <circle cx="150" cy="124" r="62" fill="#f0c3a4"/>
+  <path d="M88 118c0-42 28-66 62-66s62 24 62 66c-16-20-36-28-62-28s-46 8-62 28z" fill="#2a2f3e"/>
+  <circle cx="128" cy="130" r="7" fill="#1d2433"/><circle cx="172" cy="130" r="7" fill="#1d2433"/>
+  <path d="M136 156q14 13 28 0" stroke="#1d2433" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <circle cx="110" cy="152" r="9" fill="#ff9b86" opacity=".65"/><circle cx="190" cy="152" r="9" fill="#ff9b86" opacity=".65"/>
+</svg>
+          <span class="frame__caption">원본 사진</span>
+        </div>
+        <div class="frame frame--portrait frame--tilt-r">
+          <svg class="art" viewBox="0 0 300 300" role="img" aria-label="사람 자리 그림">
+  <rect width="300" height="300" fill="#f6f1e4"/>
+  <path d="M46 300c0-58 46-96 104-96s104 38 104 96z" fill="#2f9e6b"/>
+  <circle cx="150" cy="124" r="62" fill="#ffd9bd"/>
+  <path d="M88 118c0-42 28-66 62-66s62 24 62 66c-16-20-36-28-62-28s-46 8-62 28z" fill="#30261f"/>
+  <circle cx="128" cy="130" r="7" fill="#1d2433"/><circle cx="172" cy="130" r="7" fill="#1d2433"/>
+  <path d="M136 156q14 13 28 0" stroke="#1d2433" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <circle cx="110" cy="152" r="9" fill="#ff9b86" opacity=".65"/><circle cx="190" cy="152" r="9" fill="#ff9b86" opacity=".65"/>
+</svg>
+          <span class="frame__caption">동화 속 모습</span>
+        </div>
+      </div>
+      <p class="statebox__title" style="margin-top: var(--space-6);">후보 중에서 고르기</p>
+      <div class="thumbs">
+        <button class="thumb" type="button" aria-pressed="false"><svg class="art" viewBox="0 0 160 160" role="img" aria-label="후보 자리 그림">
+  <rect width="160" height="160" fill="#f6f1e4"/>
+  <path d="M18 160c0-34 28-56 62-56s62 22 62 56z" fill="#ff6b4a"/>
+  <circle cx="80" cy="66" r="34" fill="#ffd9bd"/>
+  <path d="M46 62c0-23 15-36 34-36s34 13 34 36c-9-11-20-15-34-15s-25 4-34 15z" fill="#30261f"/>
+  <circle cx="68" cy="70" r="4" fill="#1d2433"/><circle cx="92" cy="70" r="4" fill="#1d2433"/>
+  <path d="M72 84q8 7 16 0" stroke="#1d2433" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg><span class="thumb__label">첫 번째</span></button>
+        <button class="thumb" type="button" aria-pressed="true"><span class="thumb__check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><svg class="art" viewBox="0 0 160 160" role="img" aria-label="후보 자리 그림">
+  <rect width="160" height="160" fill="#f6f1e4"/>
+  <path d="M18 160c0-34 28-56 62-56s62 22 62 56z" fill="#2f9e6b"/>
+  <circle cx="80" cy="66" r="34" fill="#ffd9bd"/>
+  <path d="M46 62c0-23 15-36 34-36s34 13 34 36c-9-11-20-15-34-15s-25 4-34 15z" fill="#30261f"/>
+  <circle cx="68" cy="70" r="4" fill="#1d2433"/><circle cx="92" cy="70" r="4" fill="#1d2433"/>
+  <path d="M72 84q8 7 16 0" stroke="#1d2433" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg><span class="thumb__label">두 번째</span></button>
+        <button class="thumb" type="button" aria-pressed="false"><svg class="art" viewBox="0 0 160 160" role="img" aria-label="후보 자리 그림">
+  <rect width="160" height="160" fill="#f6f1e4"/>
+  <path d="M18 160c0-34 28-56 62-56s62 22 62 56z" fill="#2f5bff"/>
+  <circle cx="80" cy="66" r="34" fill="#ffd9bd"/>
+  <path d="M46 62c0-23 15-36 34-36s34 13 34 36c-9-11-20-15-34-15s-25 4-34 15z" fill="#30261f"/>
+  <circle cx="68" cy="70" r="4" fill="#1d2433"/><circle cx="92" cy="70" r="4" fill="#1d2433"/>
+  <path d="M72 84q8 7 16 0" stroke="#1d2433" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg><span class="thumb__label">세 번째</span></button>
+      </div>
+      <div class="row" style="margin-top: var(--space-6);">
+        <button class="btn btn--primary" type="button" data-qa="primary-btn">이 캐릭터로 할래요</button>
+        <button class="btn" type="button">다시 만들기&nbsp;(2/3)</button>
+        <button class="btn btn--quiet" type="button">다른 인물로 바꿀래요.</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="shot">
+    <p class="shot__label">화면 3 · 이야기 진행</p>
+    <div class="screen" data-qa="screen-story">
+      <div class="steps"><span class="step" aria-current="step">2 / 5</span><span class="step">장면을 다섯 번 골라요</span></div>
+      <div class="split split--art">
+        <div class="frame"><svg class="art" viewBox="0 0 480 380" role="img" aria-label="장면 삽화 자리 그림">
+  <rect width="480" height="380" fill="#cfe0f7"/>
+  <circle cx="398" cy="66" r="36" fill="#fff6e0"/>
+  <path d="M0 196h480v184H0z" fill="#3fae78"/>
+  <path d="M0 196q70-26 140 0t140 0 140 0 60-8v16H0z" fill="#2f9e6b"/>
+  <path d="M46 206 104 72l58 134z" fill="#1f7f55"/><rect x="96" y="196" width="16" height="30" fill="#6b4a2f"/>
+  <path d="M150 206 218 50l68 156z" fill="#2f8f63"/><rect x="210" y="196" width="18" height="34" fill="#6b4a2f"/>
+  <path d="M296 206 350 86l54 120z" fill="#1f7f55"/><rect x="342" y="196" width="16" height="28" fill="#6b4a2f"/>
+  <path d="M0 300h480v26H0z" fill="#2f5bff" opacity=".85"/>
+  <ellipse cx="86" cy="300" rx="34" ry="13" fill="#d9dee8"/><ellipse cx="178" cy="304" rx="40" ry="14" fill="#c7ccd8"/><ellipse cx="282" cy="300" rx="34" ry="13" fill="#d9dee8"/>
+  <g transform="translate(336 268)">
+    <path d="M0 46c0-26 10-44 24-44s20 20 14 44z" fill="#ff6b4a"/>
+    <path d="M26 44c22-6 30-30 18-48-14 4-24 22-18 48z" fill="#ff8b6e"/>
+    <circle cx="20" cy="12" r="4" fill="#1d2433"/>
+    <circle cx="6" cy="46" r="7" fill="#8a5a2b"/>
+  </g>
+</svg></div>
+        <div>
+          <p class="storybody" data-qa="story-text">서영이는 반짝이는 돌다리를 건너 숲으로 들어갔어요. 나무 사이로 노란 빛이 새어 나오고, 작은 다람쥐 한 마리가 길 한가운데에 앉아 있었어요.</p>
+          <p class="question display">다람쥐가 길을 막고 서 있어요. 어떻게 할까요?</p>
+        </div>
+      </div>
+      <div class="choices">
+        <button class="choice" type="button"><span class="choice__num">1</span>다람쥐에게 인사한다</button>
+        <button class="choice" type="button"><span class="choice__num">2</span>살금살금 돌아간다</button>
+        <button class="choice" type="button"><span class="choice__num">3</span>다람쥐에게 도토리를 건네준다</button>
+      </div>
+
+      <div class="states">
+        <div data-qa="screen-waiting">
+          <p class="statebox__title">대기 상태</p>
+          <div class="waiting">
+            <svg class="spinner" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="none" stroke="var(--c-accent-track)" stroke-width="7"/><path d="M24 5a19 19 0 0 1 19 19" fill="none" stroke="var(--c-accent)" stroke-width="7" stroke-linecap="round"/></svg>
+            <div>
+              <p class="waiting__text">도깨비가 다음 장면을 그리고 있어요</p>
+              <p class="waiting__clock">12초 지났어요</p>
+            </div>
+          </div>
+        </div>
+        <div data-qa="screen-error">
+          <p class="statebox__title">오류 카드 상태</p>
+          <div class="errorcard">
+            <div class="errorcard__head"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--c-warn)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p class="errorcard__text">그림이 늦어지고 있어요. 다시 시도해 볼까요?</p></div>
+            <button class="btn" type="button">다시 시도</button>
+          </div>
+          <div class="errorcard">
+            <div class="errorcard__head"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--c-warn)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p class="errorcard__text">오늘은 도깨비가 그림을 다 그렸어요. <span class="errorcard__time">10월 6일 11:50</span> 이후에 다시 만들 수 있어요. 저장된 동화는 책장에서 볼 수 있어요.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shot">
+    <p class="shot__label">화면 4 · 읽기</p>
+    <div class="screen" data-qa="screen-reading">
+      <h2 class="title title--mid display">숲속 다람쥐와 돌다리</h2>
+      <div class="book" style="margin-top: var(--space-4);">
+        <div class="book__page book__page--art"><svg class="art" viewBox="0 0 420 340" role="img" aria-label="책의 그림 쪽 자리 그림">
+  <rect width="420" height="340" fill="#cfe0f7"/>
+  <path d="M0 180h420v160H0z" fill="#3fae78"/>
+  <path d="M30 196 96 56l66 140z" fill="#1f7f55"/><rect x="88" y="186" width="18" height="34" fill="#6b4a2f"/>
+  <path d="M252 198 316 70l64 128z" fill="#2f8f63"/><rect x="308" y="190" width="18" height="34" fill="#6b4a2f"/>
+  <rect x="176" y="150" width="72" height="104" rx="36" fill="#2f5bff"/>
+  <rect x="190" y="170" width="44" height="84" rx="22" fill="#e3e9ff"/>
+  <circle cx="226" cy="214" r="5" fill="#2f5bff"/>
+  <circle cx="352" cy="62" r="26" fill="#fff6e0"/>
+  <g transform="translate(96 250)"><path d="M0 40c0-22 9-38 21-38s17 17 12 38z" fill="#ff6b4a"/><circle cx="17" cy="12" r="3.5" fill="#1d2433"/></g>
+</svg></div>
+        <div class="book__page book__page--text">
+          <p class="book__text">다람쥐는 도토리를 받고 눈을 동그랗게 떴어요. 그러고는 꼬리로 숲 안쪽을 가리켰어요. 그곳에는 아무도 모르는 작은 문이 있었어요.</p>
+        </div>
+      </div>
+      <div class="reader">
+        <p class="reader__progress">3 / 8 쪽<span class="bar"><span class="bar__fill"></span></span></p>
+        <button class="btn" type="button">이전 장으로</button>
+        <button class="btn btn--round" type="button" aria-label="읽어주기"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg></button>
+        <button class="btn" type="button">다음 장으로</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

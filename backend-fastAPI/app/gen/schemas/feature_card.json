@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "charLook": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "charLook"
+  ],
+  "additionalProperties": false
+}

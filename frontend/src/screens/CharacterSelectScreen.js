@@ -1,11 +1,24 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import styled from 'styled-components';
 import BaseScreenLayout from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
 import dokkaebiImg from '../assets/images/mainCharactor.png';
 
+const Notice = styled.p`
+  margin-bottom: ${({ theme }) => theme.space[4]};
+  padding: ${({ theme }) => `${theme.space[3]} ${theme.space[4]}`};
+  font-size: ${({ theme }) => theme.text.base};
+  color: ${({ theme }) => theme.colors.ink};
+  background: ${({ theme }) => theme.colors.accentPale};
+  border: ${({ theme }) => theme.border.rule};
+  border-radius: ${({ theme }) => theme.radius.card};
+`;
+
 const CharacterSelectScreen = () => {
   const navigate = useNavigate();
+  // 흐름 화면이 새로고침으로 상태를 잃고 이리로 보냈을 때
+  const flowLost = useLocation().state?.flowLost;
 
   const handleUseExisting = () => {
     navigate('/select-existing-character');
@@ -25,18 +38,18 @@ const CharacterSelectScreen = () => {
       imageSrc={dokkaebiImg}
       imageAlt="도깨비"
     >
-      {/* 가운데 영역에 버튼 2개 */}
-      <div style={{ marginBottom: '10px' }}>
-      <RoundedButton
-          onClick={handleUseExisting}
-        >
-          기존 캐릭터를 사용하기
+      <div>
+        {flowLost && (
+          <Notice role="status" data-qa="flow-notice">
+            새로고침해서 만들던 내용을 이어 갈 수 없어요. 주인공을 다시 골라 주세요.
+          </Notice>
+        )}
+        <RoundedButton $primary type="button" onClick={handleUseNew}>
+          새 캐릭터를 사용하기
         </RoundedButton>
 
-        <RoundedButton
-          onClick={handleUseNew}
-        >
-          새 캐릭터를 사용하기
+        <RoundedButton type="button" onClick={handleUseExisting}>
+          기존 캐릭터를 사용하기
         </RoundedButton>
       </div>
     </BaseScreenLayout>

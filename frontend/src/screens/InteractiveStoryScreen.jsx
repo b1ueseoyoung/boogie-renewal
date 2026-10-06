@@ -1,319 +1,243 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
-import { storyCreationState } from '../recoil/atoms';
-import BaseScreenLayout from '../components/BaseScreenLayout';
-import styled, { keyframes, createGlobalStyle } from 'styled-components';
-import squirrelImg from '../assets/images/서영이와 다람쥐.webp';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { useRecoilState, useSetRecoilState } from 'recoil';
+import styled from 'styled-components';
+import { storyCreationState, isStoryGeneratedState } from '../recoil/atoms';
+import BaseScreenLayout, { rise } from '../components/BaseScreenLayout';
+import WaitingOverlay from '../components/WaitingOverlay';
+import GenerationError from '../components/GenerationError';
 import { postStoryNext } from '../api/story';
-import { toast } from 'react-toastify';
+import { speak, stopSpeaking } from '../utils/speak';
 
-// 1) 전역 스타일: --angle 커스텀 프로퍼티 정의
-const GlobalStyles = createGlobalStyle`
-  @property --angle {
-    syntax: "<angle>";
-    initial-value: 0deg;
-    inherits: false;
-  }
-`;
+const TOTAL_STEPS = 5;
 
-// 2) spin keyframes: --angle 값을 0deg → 360deg로 변경
-const spin = keyframes`
-  from { --angle: 0deg; }
-  to   { --angle: 360deg; }
-`;
-
-// 3) 화면 전체 컨테이너: 이미지와 버튼을 세로로 정렬하고 중앙에 배치
-const Content = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding-bottom: 2rem;
-`;
-
-// 4) 스토리 이미지 래퍼
-const ImageWrapper = styled.div`
-  width: 100%;
-  max-width: 22rem;
-  position: relative;
-  border-radius: 1rem;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  background-image: ${props => `url("${props.image || squirrelImg}")`};
-  background-size: cover;
-  background-position: center;
-  aspect-ratio: 1 / 1; /* 정사각형 */
-  
-  @media (max-height: 599px) {
-    max-width: 15rem;
-  }  
-  @media (min-height: 600px) {
-    max-width: 20rem;
-  }  
-  @media (min-height: 700px) {
-    max-width: 25rem; /* 220px */
-  }
-  @media (min-height: 800px) {
-    max-width: 28rem; /* 220px */
-  }
-  @media (min-height: 900px) {
-    max-width: 32rem; /* 220px */
-  }
-  @media (min-height: 1000px) {
-    max-width: 33rem;  /* 280px */
-  }
-  @media (min-width: 360px) {
-    max-width: 26rem;    /* 160px */
-  }
-  @media (min-width: 720px) {
-    max-width: 27rem; /* 220px */
-  }
-  @media (min-width: 1080px) {
-    max-width: 28rem;  /* 280px */
-  }
-  @media (min-width: 1440px) {
-    max-width: 29rem;  /* 360px */
-  }
-`;
-
-// 5) 선택지 오버레이: 이미지 아래, 가로로 버튼 나열
-const ChoicesOverlay = styled.div`
+// 장면이 바뀌면(key=step) 그림과 글이 다시 떠오른다. 카드 없이 바탕 위에 펼친 그림책처럼 둔다
+const Scene = styled.div`
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  justify-content: center;
-  gap: 0.75rem;
-`;
+  gap: ${({ theme }) => theme.space[5]};
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  animation: ${rise} ${({ theme }) => `${theme.motion.enter} ${theme.motion.out}`};
 
-// 6) 기본 투명 버튼 스타일
-const TransparentButton = styled.button`
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.75);
-  color: #000;
-  border: 1px solid rgba(255,255,255, 1);
-  border-radius: 0.5rem;
-  font-family: Pretendard;
-  font-size: 1rem;
-  font-weight: 700;
-  text-align: center;
-  cursor: pointer;
-  position: relative;
-  z-index: 0;
-  &:hover {
-    background: rgba(255, 255, 255, 0.9);
+  @media (min-width: 52.0625rem) {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   }
 `;
 
-// 7) 선택 시 반짝이는 빛나는 테두리 버튼 스타일
-const GlowButton = styled(TransparentButton)`
-  &::before, &::after {
+const Art = styled.img`
+  display: block;
+  width: 100%;
+  /* 선택지까지 한 화면에 들어오도록 화면 높이에 맞춘다 */
+  max-width: min(34rem, 52vh);
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;
+
+  @media (max-width: 52rem) {
+    max-width: min(100%, 34vh);
+  }
+  object-fit: cover;
+  border-radius: ${({ theme }) => theme.radius.card};
+  background: ${({ theme }) => theme.colors.surface2};
+  box-shadow: ${({ theme }) => theme.shadow.art};
+`;
+
+const Words = styled.div`
+  min-width: 0;
+`;
+
+const StoryText = styled.p`
+  font-size: ${({ theme }) => theme.text.story};
+  line-height: 1.85;
+`;
+
+// 도깨비의 말풍선: 꼬리가 왼쪽 위를 가리킨다
+const Question = styled.h1`
+  position: relative;
+  margin-top: ${({ theme }) => theme.space[5]};
+  padding: ${({ theme }) => `${theme.space[3]} ${theme.space[5]}`};
+  font-size: ${({ theme }) => theme.text.xl};
+  line-height: 1.4;
+  background: ${({ theme }) => theme.colors.sunPale};
+  border-radius: ${({ theme }) => theme.radius.card};
+
+  &::before {
     content: '';
     position: absolute;
-    top: -3px; left: -3px;
-    width: calc(100% + 6px);
-    height: calc(100% + 6px);
-    border-radius: 0.5rem;
-    background-image: conic-gradient(from var(--angle), #FFC642, #f1e1bc, #FFC642);
-    animation: ${spin} 3s linear infinite;
-    z-index: -1;
-  }
-  &::before {
-    filter: blur(1.5rem);
-    opacity: 0.5;
+    top: -0.625rem;
+    left: 2rem;
+    border: 0.625rem solid transparent;
+    border-top: 0;
+    border-bottom-color: ${({ theme }) => theme.colors.sunPale};
   }
 `;
 
-// 8) 선택 애니메이션 유지 시간
-const GLOW_DURATION = 1000;
+const Choices = styled.div`
+  display: grid;
+  gap: ${({ theme }) => theme.space[4]};
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  margin-top: ${({ theme }) => theme.space[5]};
+`;
+
+const Choice = styled.button`
+  display: flex;
+  gap: ${({ theme }) => theme.space[3]};
+  align-items: center;
+  min-height: 3.5rem;
+  margin-bottom: 0.25rem; /* 바닥 턱 자리 */
+  padding: ${({ theme }) => `${theme.space[3]} ${theme.space[5]} ${theme.space[3]} ${theme.space[3]}`};
+  font-family: ${({ theme }) => theme.fonts.display};
+  font-size: ${({ theme }) => theme.text.lg};
+  line-height: 1.35;
+  text-align: left;
+  color: ${({ theme }) => theme.colors.ink};
+  background: ${({ theme }) => theme.colors.surface};
+  border: ${({ theme }) => theme.border.thick};
+  border-radius: ${({ theme }) => theme.radius.card};
+  box-shadow: ${({ theme }) => theme.shadow.ledgeSoft};
+  cursor: pointer;
+  /* 선택지가 하나씩 차례로 나타난다 */
+  animation: ${rise} ${({ theme }) => `${theme.motion.enter} ${theme.motion.out}`} backwards;
+  animation-delay: ${({ $order }) => `${120 + $order * 70}ms`};
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.accentPale};
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &:active {
+    box-shadow: none;
+  }
+`;
+
+const ChoiceNum = styled.span`
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-family: ${({ theme }) => theme.fonts.display};
+  font-size: ${({ theme }) => theme.text.lg};
+  color: ${({ theme }) => theme.colors.ink};
+  background: ${({ theme }) => theme.colors.sun};
+  border-radius: 50%;
+`;
 
 export default function InteractiveStoryScreen() {
-  useEffect(() => {
-    toast.info('컴포넌트 마운트 테스트 알림');
-  }, []);
   const navigate = useNavigate();
   const [storyData, setStoryData] = useRecoilState(storyCreationState);
   const { choices = [], step, question, story, image } = storyData;
-  const [animatingIndex, setAnimatingIndex] = useState(null);
-  const audioRef = useRef(null);
-  const useDummy = false; // 백 연결시 false로 변경
+  const setIsStoryGenerated = useSetRecoilState(isStoryGeneratedState);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState(null);
+  const [lastChoice, setLastChoice] = useState(null);
+  const [elapsed, setElapsed] = useState(0);
+  const pendingRef = useRef(false);
 
   useEffect(() => {
-  if (!question && !story) return;
-  let isCancelled = false;
+    if (!question && !story) return undefined;
+    let isCancelled = false;
 
-  // 문장 단위 분할 함수: ., !, ? 뒤로 자르되, 매칭 안 되면 전체를 하나의 청크로
-  const splitText = (text) =>
-    text
-      ? text.match(/[^\.!\?]+[\.!\?]+/g)?.map(s => s.trim()) || [text]
-      : [];
+    const splitText = (text) =>
+      text ? text.match(/[^.!?]+[.!?]+/g)?.map((s) => s.trim()) || [text] : [];
 
-  // TTS API 호출 → Blob URL 반환
-  const ttsFetch = (chunk) =>
-    fetch('http://localhost:5001/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: chunk }),
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('TTS 요청 실패');
-        return res.blob();
-      })
-      .then(blob => URL.createObjectURL(blob));
-
-  // 청크 배열을 받아 순차 재생하되, 현재 청크 재생 중에 다음 청크를 미리 요청
-  const playChunks = async (chunks) => {
-    let preFetchedUrl = null;
-
-    for (let i = 0; i < chunks.length; i++) {
-      if (isCancelled) break;
-
-      // 현재 URL: 첫 청크는 await 호출, 이후엔 prefetch 결과 사용
-      let url = i === 0
-        ? await ttsFetch(chunks[i])
-        : preFetchedUrl;
-
-      // 다음 청크가 있으면 즉시 fetch 시작 (prefetch)
-      let nextPromise = null;
-      if (i + 1 < chunks.length) {
-        nextPromise = ttsFetch(chunks[i + 1]);
+    (async () => {
+      for (const chunk of [...splitText(story), ...splitText(question)]) {
+        if (isCancelled || !(await speak(chunk))) break;
       }
+    })();
 
-      // 현재 청크 재생
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.play();
+    return () => {
+      isCancelled = true;
+      stopSpeaking();
+    };
+  }, [question, story]);
 
-      // 재생이 끝날 때까지 대기
-      await new Promise(resolve => {
-        audio.addEventListener('ended', resolve);
-      });
+  useEffect(() => {
+    if (!pending) return undefined;
+    setElapsed(0);
+    const startedAt = Date.now();
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [pending]);
 
-      // 사용한 URL 해제
-      URL.revokeObjectURL(url);
+  // 다시 시도할 수 없는 오류(limit 등)는 카드의 버튼 말고도 Escape나 탭으로 닫는다.
+  useEffect(() => {
+    if (!error || error.retryable) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setError(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [error]);
 
-      // prefetch 결과를 다음 반복에 사용
-      if (nextPromise) {
-        preFetchedUrl = await nextPromise;
-      }
+  const handleOptionClick = async (choice) => {
+    if (pendingRef.current) return;
+    pendingRef.current = true;
+    stopSpeaking();
+    setLastChoice(choice);
+    setError(null);
+    setPending(true);
+
+    const result = await postStoryNext({ choice });
+    pendingRef.current = false;
+    setPending(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
     }
+    const { data } = result;
+    if (result.status === 201) {
+      setIsStoryGenerated(true);
+      navigate('/reading?file=' + encodeURIComponent(data.contentUrl) + '&title=' + encodeURIComponent(data.title));
+      return;
+    }
+    setStoryData((prev) => ({
+      ...prev,
+      history: [...prev.history, data.story],
+      story: data.story,
+      question: data.question,
+      image: data.s3_url,
+      choices: data.choices,
+      step: prev.step + 1,
+    }));
   };
 
-  (async () => {
-    const qChunks = splitText(question);
-    const sChunks = splitText(story);
+  const handleRetry = () => handleOptionClick(lastChoice);
 
-    if (qChunks.length) {
-      await playChunks(qChunks);
-    }
-    if (!isCancelled && sChunks.length) {
-      await playChunks(sChunks);
-    }
-  })();
-
-  return () => {
-    isCancelled = true;
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+  const dismissIfNotRetryable = () => {
+    if (error && !error.retryable) setError(null);
   };
-}, [question, story]);
 
-  const handleOptionClick = (opt, idx) => {
-    console.log('👉 선택된 옵션:', opt);
-    setAnimatingIndex(idx);
-    setTimeout(() => {
-      setAnimatingIndex(null);
-
-      if (useDummy) {
-        // 👉 더미 로직
-        console.log('🧪 useDummy=true, 더미 데이터 사용 중');
-        setStoryData(prev => {
-          const newStep = prev.step + 1;
-          return {
-            ...prev,
-            history: [...prev.history, `선택: ${opt}`],
-            story:   `다음 이야기: ${opt} 이후의 내용입니다.`,
-            question:`${opt}을 선택했군요. 무엇을 할까요?`,
-            image:   squirrelImg,
-            choices: ['A', 'B', 'C'],
-            step:    newStep,
-          };
-        });
-        if (step >= 5) {
-          navigate('/making-cover');
-        }
-        if (step >= 5) {
-          navigate('/making-cover');
-        }
-      } else {
-        // 👉 실제 요청 로직
-        const req = postStoryNext({ choice: opt });
-
-        // 마지막 스텝이라면 즉시 페이지 이동
-        if (step + 1 > 5) {
-          navigate('/making-cover');
-        }
-
-        // 백엔드 응답이 오면 토스트 띄우기
-        req.then(({ status, data }) => {
-          console.log('✅ 응답 status:', status);
-          if (status === 201) {
-            toast.success('줄거리 생성이 끝났어요! 이제 표지꾸미기를 마치면 완성된 동화책을 확인할 수 있어요!');
-          } else {
-            // 정상적으로 storyData 업데이트
-            console.log('📝 Recoil 업데이트 시작');
-            setStoryData(prev => {
-              const newStep = prev.step + 1;
-              return {
-                ...prev,
-                history: [...prev.history, data.story],
-                story:    data.story,
-                question: data.question,
-                image:    data.s3_url,
-                choices:  data.choices,
-                step:     newStep,
-              };
-            });
-          }
-        }).catch((err) => {
-          console.error('❌ 스토리 생성 실패:', err);
-          toast.error('다음 스토리 생성에 실패했습니다.');
-        });
-      }
-    }, GLOW_DURATION);  
-  };
+  // 새로고침으로 이야기 상태가 사라졌다. 진행 중 이야기를 읽어 올 API가 없어 이어 갈 수 없으니 처음으로 보낸다.
+  if (!(step >= 1)) return <Navigate to="/character-select" replace state={{ flowLost: true }} />;
 
   return (
-    <>
-    <GlobalStyles />
-      <BaseScreenLayout
-        progressText={`${step} / 5`}
-        progressCurrent={step}
-        progressTotal={5}
-        title={question}
-        subTitle={story}
-        imageSrc={null}
-      >
-        <Content>
-          {/* 1) 이미지 */}
-          <ImageWrapper image={image} />
+    <BaseScreenLayout bare progressText={`${step}장 / ${TOTAL_STEPS}장`} progressCurrent={step} progressTotal={TOTAL_STEPS}>
+      <Scene key={`scene-${step}`}>
+        <Art src={image} alt="장면 삽화" />
+        <Words>
+          <StoryText>{story}</StoryText>
+          <Question>{question}</Question>
+        </Words>
+      </Scene>
 
-          {/* 2) 선택지 버튼 */}
-          <ChoicesOverlay>
-            {(choices.length > 0 ? choices : ['다음']).map((opt, idx) =>
-              animatingIndex === idx ? (
-                <GlowButton key={idx}>{opt}</GlowButton>
-              ) : (
-                <TransparentButton key={idx} onClick={() => handleOptionClick(opt, idx)}>
-                  {opt}
-                </TransparentButton>
-              )
-            )}
-          </ChoicesOverlay>
-        </Content>
-      </BaseScreenLayout>
-    </>
+      <Choices key={`choices-${step}`}>
+        {(choices.length > 0 ? choices : ['다음']).map((opt, idx) => (
+          <Choice key={idx} type="button" $order={idx} onClick={() => handleOptionClick(opt)}>
+            <ChoiceNum aria-hidden="true">{idx + 1}</ChoiceNum>
+            {opt}
+          </Choice>
+        ))}
+      </Choices>
+
+      {pending && <WaitingOverlay message="도깨비가 다음 장면을 그리고 있어요" elapsed={elapsed} />}
+
+      {error && (
+        <div onClick={dismissIfNotRetryable}>
+          <GenerationError error={error} onRetry={handleRetry} onClose={dismissIfNotRetryable} scene />
+        </div>
+      )}
+    </BaseScreenLayout>
   );
 }

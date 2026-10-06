@@ -1,0 +1,24 @@
+[project]
+name = "kkumdokkaebi-backend"
+version = "0.1.0"
+description = "꿈도깨비 생성 서버 (FastAPI)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2",
+    "httpx",
+    "python-multipart",
+    "pillow",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"

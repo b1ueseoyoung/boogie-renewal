@@ -1,11 +1,6 @@
 import React from 'react';
  import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
- import styled from 'styled-components';
- 
- const COLORS = [
-   '#8884d8', '#82ca9d', '#ffc658', '#ff8042',
-   '#ffbb28', '#00C49F', '#FF6699', '#3399FF',
- ];
+ import styled, { useTheme } from 'styled-components';
  
  const ChartWrapper = styled.div`
    margin-bottom: 2rem;
@@ -15,10 +10,12 @@ import React from 'react';
    text-align: center;
    font-size: 1rem;
    margin-bottom: 0.5rem;
-   color: white;
+   color: ${({ theme }) => theme.colors.surface};
  `;
  
  const CategoryStatsChart = ({ title, data }) => {
+   const theme = useTheme();
+   const COLORS = theme.legacy.chart;
    const hasData = data && Object.keys(data).length > 0;
  
    const defaultData = [
@@ -43,7 +40,7 @@ import React from 'react';
              cx="50%"
              cy="50%"
              outerRadius={80}
-             fill="#8884d8"
+             fill={COLORS[0]}
              label
            >
              {chartData.map((entry, index) => (

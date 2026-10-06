@@ -1,0 +1,9 @@
+**/node_modules
+**/build
+**/.venv
+data
+.local
+.omo
+deploy/data
+deploy/seed
+deploy/.env

@@ -1,0 +1,17 @@
+{$SITE_ADDRESS} {
+	basic_auth {
+		{$DEMO_USER} {$DEMO_PASSWORD_HASH}
+	}
+	encode gzip
+	handle_path /api/* {
+		reverse_proxy spring:8080
+	}
+	handle_path /fa/* {
+		reverse_proxy fastapi:8000
+	}
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

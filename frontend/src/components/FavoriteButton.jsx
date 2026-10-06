@@ -2,7 +2,7 @@ import React from 'react';
 import { useRecoilState } from 'recoil';
 import { favoriteStoryIdsState } from '../recoil/atoms';
 import { BsStar, BsStarFill } from 'react-icons/bs';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 const Button = styled.div`
   position: absolute;
@@ -10,9 +10,9 @@ const Button = styled.div`
   right: 0.5rem;
   z-index: 2;
   padding: 0.25rem;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.surface};
+  border: ${({ theme }) => theme.border.rule};
   border-radius: 50%;
-  box-shadow: 0 0 4px rgba(0,0,0,0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -20,6 +20,7 @@ const Button = styled.div`
 `;
 
 export default function FavoriteButton({ storyId }) {
+  const theme = useTheme();
   const [favoriteIds, setFavoriteIds] = useRecoilState(favoriteStoryIdsState);
   const isFavorite = favoriteIds.includes(storyId);
 
@@ -32,7 +33,7 @@ export default function FavoriteButton({ storyId }) {
 
   return (
     <Button onClick={handleClick}>
-      {isFavorite ? <BsStarFill color="#facc15" size={16} /> : <BsStar color="#6b7280" size={16} />}
+      {isFavorite ? <BsStarFill color={theme.colors.accent} size={16} /> : <BsStar color={theme.colors.inkSoft} size={16} />}
     </Button>
   );
 }

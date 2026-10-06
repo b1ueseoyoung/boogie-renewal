@@ -1,0 +1,206 @@
+{
+  "arms": [
+    {
+      "id": "B0",
+      "method": "baseline_as_shipped",
+      "label": "기준선 원래 그대로(모든 CLIPTextEncode에 프롬프트, 시드 608548260914332)",
+      "reference": "사진",
+      "references": [
+        "photo"
+      ],
+      "repeat": "1회(결정적)",
+      "seed": 608548260914332,
+      "deterministic": true
+    },
+    {
+      "id": "B1",
+      "method": "baseline_repaired",
+      "label": "기준선 결함 수정본(부정 프롬프트 보존, 장마다 무작위 시드 기록)",
+      "reference": "사진",
+      "references": [
+        "photo"
+      ],
+      "repeat": "R회"
+    },
+    {
+      "id": "G1",
+      "method": "gpt_photo",
+      "label": "GPT Image",
+      "reference": "사진만",
+      "references": [
+        "photo"
+      ],
+      "repeat": "R회"
+    },
+    {
+      "id": "G2",
+      "method": "gpt_char",
+      "label": "GPT Image",
+      "reference": "승인 캐릭터만",
+      "references": [
+        "character"
+      ],
+      "repeat": "R회"
+    },
+    {
+      "id": "G3",
+      "method": "gpt_char_photo",
+      "label": "GPT Image",
+      "reference": "승인 캐릭터 + 사진(캐릭터를 먼저)",
+      "references": [
+        "character",
+        "photo"
+      ],
+      "repeat": "R회"
+    }
+  ],
+  "conditions": [
+    {
+      "id": "front",
+      "scene": "The character stands in a sunny forest clearing, facing the viewer directly, with a gentle smile. Upper body and face clearly visible.",
+      "caption_ko": "햇살 드는 숲속 빈터에서 정면을 보고 미소 짓는 모습"
+    },
+    {
+      "id": "side",
+      "scene": "The character walks along a riverside path, seen in full side profile facing left, looking ahead.",
+      "caption_ko": "강가 길을 걷는 옆모습"
+    },
+    {
+      "id": "expression",
+      "scene": "The character laughs out loud with eyes squeezed shut and mouth wide open, holding a red balloon at a village festival.",
+      "caption_ko": "마을 축제에서 빨간 풍선을 들고 눈을 감은 채 크게 웃는 모습"
+    },
+    {
+      "id": "full_body",
+      "scene": "The character jumps over a puddle on a rainy street. Full body visible from head to shoes.",
+      "caption_ko": "비 오는 거리에서 웅덩이를 뛰어넘는 전신 모습"
+    },
+    {
+      "id": "outfit",
+      "scene": "The character stands under a big umbrella wearing a yellow raincoat and green rain boots instead of the usual outfit.",
+      "caption_ko": "큰 우산 아래 노란 비옷과 초록 장화 차림(평소 옷과 다름)"
+    }
+  ],
+  "templates": {
+    "scene": "Create exactly one children's storybook illustration. Use the image generation tool exactly once.\nScene: {scene}\nCharacter identity: the main character is the same person as in the reference image(s). Keep the face shape, eyes, eyebrows, nose, mouth, skin tone, hairstyle and hair color. Keep the apparent age. {char_look}\nOutfit: {outfit_rule}\nStyle: soft, warm storybook illustration, consistent with the reference character image when one is given. One character only. No text, no watermark, no border. Portrait orientation.\nPermission: the person shown in the reference image(s), or their guardian, has agreed to this use of their likeness.\nReference images (pass every path in referenced_image_paths):\n{reference_lines}\nDo not run shell commands. Do not edit files. When the tool returns, answer with JSON only.",
+    "base_character": "Create exactly one storybook-style character portrait of the person in the reference photo. Use the image generation tool exactly once.\nKeep the face shape, eyes, eyebrows, nose, mouth, skin tone, hairstyle, hair color and apparent age so that the person stays recognizable. Waist-up, facing the viewer, relaxed friendly expression, plain light background, wearing a plain single-color T-shirt.\nStyle: soft, warm children's storybook illustration. One character only. No text, no watermark, no border. Portrait orientation.\nPermission: the person shown in the reference photo, or their guardian, has agreed to this use of their likeness.\nReference images (pass every path in referenced_image_paths):\n{photo_path} - photo of the real person (identity source)\nDo not run shell commands. Do not edit files. When the tool returns, answer with JSON only.",
+    "reference_roles": {
+      "character": "approved storybook character (identity and style source)",
+      "photo": "photo of the real person (identity source)"
+    },
+    "reference_line": "<절대 경로> - <역할>",
+    "outfit_rules": {
+      "scene_specified": "as described in the scene",
+      "with_character": "the same outfit as the reference character",
+      "photo_only": "the outfit given in the character identity line"
+    },
+    "final_message_schema": {
+      "status": "generated|modified|declined|failed",
+      "note": "string"
+    },
+    "char_look_output": {
+      "charLook": "<영어 한두 문장, 300자 이내, 'A ... with ...' 다음 'Wearing ...'>"
+    }
+  },
+  "baseline_prompt": "{scene} {char_look}",
+  "order": {
+    "round_1": [
+      "base_character",
+      "G2",
+      "G1",
+      "G3",
+      "B1",
+      "B0"
+    ],
+    "round_n": [
+      "G2",
+      "G1",
+      "G3",
+      "B1"
+    ],
+    "pilot": {
+      "base_character": 1,
+      "arm": "G2",
+      "round": 1
+    },
+    "within_arm": "conditions"
+  },
+  "repeat_rule": {
+    "per_image": "max((used_after_pilot - used_before_pilot) / success_count, 0.2)",
+    "per_image_min": 0.2,
+    "r_candidates": [
+      3,
+      2,
+      1
+    ],
+    "r_condition": "(15 * r + 1) * per_image <= 40",
+    "r_default": 1,
+    "stop_cumulative_min": 40,
+    "stop_used_percent_min": 95,
+    "stop_exit_code": 20,
+    "cumulative": "sum of increases per resets_at window; on window change, first read value in new window is its start; record plan.json windows: [{resets_at, start, last}]"
+  },
+  "caps": {
+    "lab": 40,
+    "demo": 10
+  },
+  "rubric": {
+    "resemblance": {
+      "5": "누가 봐도 같은 사람",
+      "4": "닮았다",
+      "3": "애매하다",
+      "2": "닮지 않았다",
+      "1": "전혀 다른 사람"
+    },
+    "consistency": {
+      "5": "모든 장면이 같은 캐릭터",
+      "4": "사소한 차이",
+      "3": "한 장면이 다른 사람 같다",
+      "2": "여러 장면이 다르다",
+      "1": "장면마다 다른 사람"
+    },
+    "usable": "책에 쓸 수 있나",
+    "task_types": [
+      "resemblance",
+      "consistency"
+    ],
+    "record_fields": [
+      "reviewer",
+      "taskId",
+      "key",
+      "type",
+      "score",
+      "usable",
+      "tags",
+      "at"
+    ],
+    "task_id": "sha256(blind_secret + key)[:12]",
+    "reviewers": 3
+  },
+  "tags": [
+    "different_person",
+    "age_drift",
+    "hair_drift",
+    "outfit_drift",
+    "style_break",
+    "artifact",
+    "wrong_scene",
+    "other"
+  ],
+  "pass": {
+    "mean_min": 4.0,
+    "low_score_max": 2,
+    "low_rate_max": 0.1
+  },
+  "selection": {
+    "primary": "resemblance_mean",
+    "tie_threshold": 0.1,
+    "tie_breakers": [
+      "consistency_mean",
+      "limit_per_image",
+      "latency_median"
+    ],
+    "none_passed": "통과한 방식 없음",
+    "pending": "검토 대기 (완료 n/3)"
+  }
+}

@@ -10,4 +10,5 @@ public class IntroInfoDTO {
     private String genre;
     private String place;
     private String imgUrl;
+    private String charImgUrl;
 }

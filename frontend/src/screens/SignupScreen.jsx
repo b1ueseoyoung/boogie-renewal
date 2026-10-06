@@ -3,9 +3,10 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { signupUser, checkUserId } from '../api/auth';
 
+// min-height: 폼이 화면보다 길면 남색 바탕도 같이 늘어나야 한다(바탕이 밝은 노트로 바뀐 뒤 넘친 글자가 안 보였다)
 const SignupContainer = styled.div`
-  height: 100vh;
-  background-color: #001840;
+  min-height: 100vh;
+  background-color: ${({ theme }) => theme.legacy.night};
   display: flex;
   padding: 6.25rem 2rem;
   flex-direction: column;
@@ -24,7 +25,7 @@ const TitleWrapper = styled.div`
 `;
 
 const Title = styled.h1`
-  color: #FDFCFA;
+  color: ${({ theme }) => theme.legacy.paper};
   text-align: center;
   font-family: Pretendard;
   font-size: 3rem;
@@ -33,7 +34,7 @@ const Title = styled.h1`
 `;
 
 const SubTitle = styled.p`
-  color: #FDFCFA;
+  color: ${({ theme }) => theme.legacy.paper};
   text-align: center;
   font-family: Pretendard;
   font-size: 1.5rem;
@@ -69,6 +70,7 @@ const Label = styled.label`
   justify-content: space-between;
   align-items: center;
   align-self: stretch;
+  color: ${({ theme }) => theme.legacy.paper};
 `;
 
 const Input = styled.input`
@@ -76,9 +78,9 @@ const Input = styled.input`
   width: 100%;
   border: 1px solid rgba(253, 252, 250, 0.50);
   background: rgba(253, 252, 250, 0.20);
-  color: #fff;
+  color: ${({ theme }) => theme.colors.surface};
   &::placeholder {
-    color: #aaa;
+    color: ${({ theme }) => theme.colors.rule};
   }
 `;
 
@@ -87,7 +89,7 @@ const SmallCheckButton = styled.button`
   border-radius: 6.25rem;
   border: 1px solid rgba(253, 252, 250, 0.50);
   background: rgba(253, 252, 250, 0.20);
-  color: #fff;
+  color: ${({ theme }) => theme.colors.surface};
   cursor: pointer;
   white-space: nowrap;
   &:hover { opacity: 0.9; }
@@ -96,8 +98,8 @@ const SmallCheckButton = styled.button`
 const SignupButton = styled.button`
   padding: 0.5rem 2rem;
   border-radius: 6.25rem;
-  background: #FFC642;
-  color: #000;
+  background: ${({ theme }) => theme.legacy.gold};
+  color: ${({ theme }) => theme.legacy.black};
   font-family: Pretendard;
   font-size: 1.5rem;
   font-weight: 700;
@@ -106,7 +108,7 @@ const SignupButton = styled.button`
 `;
 
 const Message = styled.p`
-  color: ${props => (props.available ? '#6fff8c' : '#ee5555')};
+  color: ${({ available, theme }) => (available ? theme.legacy.ok : theme.legacy.ng)};
   font-family: Pretendard;
   font-size: 1rem;
   font-weight: 700;
@@ -116,12 +118,12 @@ const Message = styled.p`
 const BottomText = styled.div`
   text-align: center;
   font-size: 1rem;
-  color: #fff;
+  color: ${({ theme }) => theme.colors.surface};
   margin-top: 1rem;
 `;
 
 const LinkText = styled.span`
-  color: #ffc642;
+  color: ${({ theme }) => theme.legacy.gold};
   cursor: pointer;
   margin-left: 4px;
   text-decoration: underline;

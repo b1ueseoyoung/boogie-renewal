@@ -3,19 +3,19 @@ import { useEffect } from 'react';
 import axios from 'axios';
 import Block from '../components/Block';
 import PopCard from '../components/PopCard';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { BsCheckCircle, BsCheckCircleFill } from 'react-icons/bs';
 
 const Container = styled.div`
-  background-color: #fff;
+  background-color: ${({ theme }) => theme.colors.surface};
   min-height: 100vh;
 `;
 
 const DeleteBar = styled.div`
   width: 100%;
-  background-color: #FF6B6B;
+  background-color: ${({ theme }) => theme.legacy.coral};
   text-align: center;
   padding: 0.75rem;
 `;
@@ -23,7 +23,7 @@ const DeleteBar = styled.div`
 const DeleteButton = styled.button`
   background: none;
   border: none;
-  color: white;
+  color: ${({ theme }) => theme.colors.ink};
   font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
@@ -71,12 +71,13 @@ const IconWrapper = styled.div`
   position: absolute;
   top: 6px;
   right: 6px;
-  color: #fff;
+  color: ${({ theme }) => theme.colors.surface};
   font-size: 1.25rem;
   z-index: 10;
 `;
 
 export default function EditBookshelf() {
+  const theme = useTheme();
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
@@ -149,22 +150,17 @@ export default function EditBookshelf() {
         <Overlay>
           <PopCard
             useWarningIcon={true}
-            titleColor="#EE5555"
             buttonDirection="column"
+            titleColor={theme.colors.redpen}
             cardTitle={`총 ${selectedIds.length}개의 동화를 삭제할까요?`}
             description="한 번 삭제되면 복구할 수 없어요."
             positiveBtnText="네! 삭제할래요."
             negativeBtnText="아니요!"
             onPositiveClick={handleDeleteConfirm}
             onNegativeClick={() => setShowPopup(false)}
+            danger
             positivePadding="0.5rem 1rem"
-            positiveBorder="1px solid rgba(238, 85, 85, 0.50)"
-            positiveBackground="rgba(238, 85, 85, 0.20)"
-            positiveColor="#fff"
             negativePadding="0.5rem 1rem"
-            negativeBorder="1px solid rgba(253, 252, 250, 0.50)"
-            negativeBackground="rgba(253, 252, 250, 0.20)"
-            negativeColor="#fff"
                       />
         </Overlay>
       )}

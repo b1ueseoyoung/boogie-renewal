@@ -1,0 +1,11 @@
+data/
+.local/
+.DS_Store
+*.log
+
+# 데모 배포: 비밀값과 개인 데이터
+deploy/.env
+deploy/data/
+deploy/seed/
+deploy/.ec2-state
+deploy/.demo-password

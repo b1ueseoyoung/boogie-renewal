@@ -1,11 +1,6 @@
 import React from 'react';
  import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
- import styled from 'styled-components';
- 
- const COLORS = [
-   '#8884d8', '#82ca9d', '#ffc658', '#ff8042',
-   '#ffbb28', '#00C49F', '#FF6699', '#3399FF',
- ];
+ import styled, { useTheme } from 'styled-components';
  
  const ChartWrapper = styled.div`
    margin-bottom: 2rem;
@@ -15,10 +10,12 @@ import React from 'react';
    text-align: center;
    font-size: 1rem;
    margin-bottom: 0.5rem;
-   color: white;
+   color: ${({ theme }) => theme.colors.ink};
  `;
  
  const CategoryStatsChart = ({ title, data }) => {
+   const theme = useTheme();
+   const COLORS = theme.legacy.chart;
    const hasData = data && Object.keys(data).length > 0;
  
    const defaultData = [
@@ -43,15 +40,16 @@ import React from 'react';
              cx="50%"
              cy="50%"
              outerRadius={80}
-             fill="#8884d8"
-             label
+             fill={COLORS[0]}
+             label={{ fill: theme.colors.ink }}
            >
              {chartData.map((entry, index) => (
                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
              ))}
            </Pie>
            <Tooltip />
-           <Legend />
+           {/* 범례 글자는 조각 색 대신 ink로 쓴다(밝은 조각 색은 흰 바탕 대비가 1.56~3.31:1) */}
+           <Legend formatter={(value) => <span style={{ color: theme.colors.ink }}>{value}</span>} />
          </PieChart>
        </ResponsiveContainer>
      </ChartWrapper>

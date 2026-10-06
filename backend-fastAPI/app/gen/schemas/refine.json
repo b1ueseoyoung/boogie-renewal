@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "paragraphs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "title": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "paragraphs",
+    "title",
+    "summary"
+  ],
+  "additionalProperties": false
+}

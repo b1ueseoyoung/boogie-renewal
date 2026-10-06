@@ -1,32 +1,22 @@
+// Spring(C-4) POST /story. throw 하지 않는다.
+// 성공(200, 201): { status, data }  실패: { status, error: C-2 본문 }
+const FALLBACK_ERROR = { errorClass: 'error', retryable: true };
+
 export async function postStoryNext({ choice }) {
+  let res;
   try {
-    console.log('📤 postStoryNext 호출됨, 보낼 choice:', choice);
-    
-    const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/story`, {
+    res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/story`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ choice }),
     });
-
-    console.log('📥 서버 응답 status:', res.status);
-
-    if (res.status === 201) {
-      return {
-        status: res.status,
-        data: null, // body 없음
-      };
-    }
-
-    const data = await res.json();
-    console.log('📥 서버 응답 내용:', data);
-    return {
-      status: res.status,
-      data,
-    };
-  } catch (error) {
-    console.error('❌ postStoryNext fetch error:', error);
-    throw error;
+  } catch (networkError) {
+    return { status: 0, error: FALLBACK_ERROR };
   }
+
+  const body = await res.json().catch(() => null);
+  if (res.ok && body !== null) {
+    return { status: res.status, data: body };
+  }
+  return { status: res.status, error: body && body.errorClass ? body : FALLBACK_ERROR };
 }

@@ -3,13 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@aws-sdk/s3-request-presigner": "^3.812.0",
     "@google-cloud/speech": "^7.0.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
-    "aws-sdk": "^2.1692.0",
     "axios": "^1.9.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -23,6 +21,7 @@
     "react-draggable": "^4.4.6",
     "react-icons": "^5.5.0",
     "react-lottie-player": "^2.1.0",
+    "react-pageflip": "^2.0.3",
     "react-router-dom": "^6.30.0",
     "react-scripts": "5.0.1",
     "react-swipeable": "^7.0.2",
@@ -36,7 +35,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

@@ -1,7 +1,9 @@
-import React from 'react';
+import React ,{ useEffect }from 'react';
 import { Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
 import GlobalStyle from './styles/GlobalStyle';
+import theme from './styles/theme';
 import CharacterCreationScreen from './screens/CharacterCreationScreen';
 import ConfirmCharacterScreen from './screens/ConfirmCharacterScreen';
 import CharacterQuestionScreen from './screens/CharacterQuestionScreen.jsx';
@@ -23,7 +25,6 @@ import ParentReportScreen from './screens/ParentReportScreen.jsx';
 import SelectExistingCharacterScreen from './screens/SelectExistingCharacterScreen.jsx';
 // 하단 고정 바
 import BottomNav from './components/BottomNav';
-import MakingBookCover from './screens/MakingBookCover';
 
 // ToastContainer 전역 등록
 import { ToastContainer } from 'react-toastify';
@@ -37,6 +38,19 @@ function PrivateRoute({ children }) {
 }
 
 function App() {
+
+    useEffect(() => {
+    const setVh = () => {
+      // 브라우저 innerHeight의 1% 단위 값을 계산
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    setVh();  // 마운트 시 한 번 실행
+    window.addEventListener('resize', setVh);  // 리사이즈 시 재계산
+    return () => window.removeEventListener('resize', setVh);
+  }, []);
+
   const location = useLocation();
 
   // 네비게이션 바 표시 여부를 결정
@@ -49,9 +63,9 @@ function App() {
     location.pathname === '/character-storage';
   
   return (
+    <ThemeProvider theme={theme}>
+    <GlobalStyle/>
     <RecoilRoot>
-      <GlobalStyle />
-
       <ToastContainer
       position="top-center"
       autoClose={3000}
@@ -85,13 +99,13 @@ function App() {
           <Route path="character-storage" element={<CharacterStore />} />
           <Route path="reading" element={<ReadingScreen />} />
           <Route path="edit-bookshelf" element={<EditBookshelf />} />
-          <Route path="making-cover" element={<MakingBookCover/>}/>
         </Route>
       </Routes>
 
       {/* 모든 페이지에서 하단 고정 바 표시 */}
       {showNav && <BottomNav />}
     </RecoilRoot>
+    </ThemeProvider>
   );
 }
 

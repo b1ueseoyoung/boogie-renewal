@@ -2,7 +2,6 @@ import { atom } from 'recoil';
 import testImg from '../assets/images/마법사 유원이.webp';
 import 서영이 from '../assets/images/testImg.png'
 import 유원이 from '../assets/images/유원이.png';
-import 민지 from '../assets/images/민지.png';
 import 코코 from '../assets/images/코코.png';
 import 코코1 from '../assets/images/코코1.png';
 import 코코2 from '../assets/images/코코2.png';
@@ -12,41 +11,15 @@ export const characterInfoState = atom({
   default: [
     {
       id: '0',
-      name: '서영이',
-      age: '5',
-      gender: '몰라',
-      job: '다람쥐',
-      speciality: '돈을 잘 벌어',
-      ability:'슈퍼맨',
-      note: '사람으로 변했다.',
-      charId: 4,
-      img: 서영이,
-      userImg: 'https://bookeating.s3.ap-northeast-2.amazonaws.com/character/img2.jpg"',
-    },
-    {
-      id: '2',
-      id: '2',
-      name: '유원이',
-      age: '5',
-      gender: '여자',
-      job: '수의사',
-      speciality: '동물과 소통이 가능해',
-      ability:'소통능력',
-      note: '사라지는 동물들을 찾으러 떠난 소녀',
-      img: 민지,
-      userImg: '',
-      charId: 8,
-    },
-    {
-      id: '3',
-      name: '코코',
-      age: '5',
-      gender: '여자',
-      job: '수의사',
-      speciality: '동물과 소통이 가능해',
-      ability:'소통능력',
-      note: '사라지는 동물들을 찾으러 떠난 소녀',
-      img: 코코,
+      name: '',
+      age: '',
+      gender: '',
+      job: '',
+      speciality: '',
+      ability:'',
+      note: '',
+      charId: null, // 고른 캐릭터가 없으면 흐름 화면이 /character-select로 보낸다
+      img: '',
       userImg: '',
     },
   ],
@@ -54,20 +27,17 @@ export const characterInfoState = atom({
 
 export const storyCreationState = atom({
   key: 'storyCreationState',
+  // 새로고침하면 이 빈 값으로 돌아간다. step 0이면 이야기 화면이 /character-select로 보낸다.
   default: {
-    charId: 1,                     // 예시 캐릭터 ID
-    genre: '모험',                 // 예시 장르
-    place: '산',                  // 예시 장소
-    history: [
-      '옛날 옛적에 용감한 주인공이 산에서 살고 있었어요.',
-    ],                            // 예시 히스토리 배열
-    story: '깊은 숲속에 꼬마 토끼 토비는 매일같이 새롭고 신나는 것을 찾으러 다녔어요.', // 최신 스토리
-    question: '토비는 처음에 어디로 갔을까요?',
-    story: '깊은 숲속에 꼬마 토끼 토비는 매일같이 새롭고 신나는 것을 찾으러 다녔어요.깊은 숲속에 꼬마 토끼 토비는 매일같이 새롭고 신나는 것을 찾으러 다녔어요.깊은 숲속에 꼬마 토끼 토비는 매일같이 새롭고 신나는 것을 찾으러 다녔어요.', // 최신 스토리
-    question: '토비는 처음에 어디로 갔을까요?토비는 처음에 어디로 갔을까요?',
-    image: testImg, // 예시 배경 이미지 URL
-    choices: ['산 아래로', '가만히', '정상으로'], // 예시 선택지
-    step: 1,                       // 현재 진행 단계
+    charId: null,
+    genre: '',
+    place: '',
+    history: [],
+    story: '',
+    question: '',
+    image: '',
+    choices: [],
+    step: 0,                       // 현재 진행 단계 (도입부를 받으면 1)
     selectedChoice: '',           // 마지막 선택 값
   },
 });
@@ -103,8 +73,8 @@ export const userInfoState = atom({
   default: [{
     id: 'qwer',
     password: '',
-    nickname: '',
-    pNumber: '',
+    nickname: ' 책먹는부기',
+    pNumber: '010-1234-5678',
   }]
 });
 
@@ -131,4 +101,14 @@ export const messageState = atom({
 export const favoriteStoryIdsState = atom({
   key: 'favoriteStoryIdsState',
   default: [],
+});
+
+export const isStoryGeneratedState = atom({
+  key: 'isStoryGeneratedState',
+  default: false,      // 줄거리 생성 전에는 false
+});
+
+export const coverImageState = atom({
+  key: 'coverImageState',
+  default: '',
 });
