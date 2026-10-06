@@ -81,7 +81,10 @@ public class LoginService {
                 entityManager.flush();
             });
         } catch (DataIntegrityViolationException | PersistenceException e) {
-            return Optional.empty();
+            if (isDuplicateKey(e)) {
+                return Optional.empty();
+            }
+            throw e;
         }
         return Optional.of(user);
     }
@@ -115,6 +118,17 @@ public class LoginService {
 
     private static boolean isValidUserId(String userId) {
         return userId != null && USER_ID.matcher(userId).matches();
+    }
+
+    // 중복 키(무결성 제약 위반)만 '이미 쓰는 아이디'로 본다. 다른 저장 실패는 서버 오류로 올린다
+    private static boolean isDuplicateKey(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof java.sql.SQLIntegrityConstraintViolationException
+                    || t instanceof org.hibernate.exception.ConstraintViolationException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean tooLongForBcrypt(String password) {
