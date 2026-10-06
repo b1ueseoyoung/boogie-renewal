@@ -5,6 +5,10 @@
 	}
 	# 사진과 그림: Spring 로그인 세션(GET /me)이 확인돼야 넘긴다
 	handle /fa/files/* {
+		# 사진 올리기는 10MB까지다(FastAPI 검사). 그보다 큰 본문은 메모리에 올리기 전에 끊는다
+		request_body {
+			max_size 11MB
+		}
 		forward_auth spring:8080 {
 			uri /me
 		}

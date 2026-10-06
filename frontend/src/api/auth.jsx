@@ -41,3 +41,10 @@ export function errorMessage(err) {
 export function errorClass(err) {
   return err?.response?.data?.errorClass || 'error';
 }
+
+// 세션이 끊긴 401(auth_required)이면 로그인 화면으로 보낸다. 로그인·가입 화면에서는 보내지 않는다(그 화면의 오류는 화면이 보여 준다)
+export function redirectIfSessionExpired(status, body) {
+  if (status !== 401 || !body || body.errorClass !== 'auth_required') return;
+  if (['/login', '/signup'].includes(window.location.pathname)) return;
+  window.location.assign('/login');
+}

@@ -197,6 +197,16 @@ class AuthFlowTest {
     }
 
     @Test
+    void fiveWrongPasswords_lockLoginEvenWithTheRightPassword() throws Exception {
+        String id = newId();
+        assertEquals(201, signup(id, "password123", "잠금").getResponse().getStatus());
+        for (int i = 0; i < 5; i++) {
+            assertEquals(401, login(new MockHttpSession(), id, "wrong-password").getResponse().getStatus());
+        }
+        assertError(login(new MockHttpSession(), id, "password123").getResponse(), 429, "too_many_attempts");
+    }
+
+    @Test
     void login_isOk_andRotatesSessionId() throws Exception {
         String id = newId();
         saveUser(id);

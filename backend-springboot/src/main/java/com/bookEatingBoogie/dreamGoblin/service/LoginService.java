@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -21,6 +25,13 @@ public class LoginService {
     private static final Pattern USER_ID = Pattern.compile("^[a-z0-9_]{4,20}$");
     // BCrypt는 72바이트까지만 본다. 한글 비밀번호는 64자 안에서도 넘을 수 있다.
     private static final int BCRYPT_MAX_BYTES = 72;
+    // 아이디마다 연속 5번 틀리면 5분 동안 로그인을 막는다(비밀번호 맞히기와 BCrypt로 CPU 묶기를 막는다)
+    // ponytail: 서버 메모리에만 센다. 서버가 여러 대가 되면 DB나 Redis로 옮긴다
+    private static final int MAX_FAILURES = 5;
+    private static final Duration LOCK = Duration.ofMinutes(5);
+    private final Map<String, Failures> failures = new ConcurrentHashMap<>();
+
+    private record Failures(int count, Instant lockedUntil) {}
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -75,12 +86,26 @@ public class LoginService {
         return Optional.of(user);
     }
 
+    public boolean isLocked(String userId) {
+        Failures f = userId == null ? null : failures.get(userId);
+        return f != null && f.lockedUntil() != null && Instant.now().isBefore(f.lockedUntil());
+    }
+
     public Optional<User> login(LoginRequestDTO request) {
         if (request.userId() == null || request.password() == null || tooLongForBcrypt(request.password())) {
             return Optional.empty();
         }
-        return userRepository.findById(request.userId())
-                .filter(user -> passwordEncoder.matches(request.password(), user.getPassword()));
+        Optional<User> user = userRepository.findById(request.userId())
+                .filter(found -> passwordEncoder.matches(request.password(), found.getPassword()));
+        if (user.isPresent()) {
+            failures.remove(request.userId());
+        } else {
+            failures.compute(request.userId(), (id, f) -> {
+                int count = (f == null || f.lockedUntil() != null ? 0 : f.count()) + 1;
+                return new Failures(count, count >= MAX_FAILURES ? Instant.now().plus(LOCK) : null);
+            });
+        }
+        return user;
     }
 
     public Optional<User> find(String userId) {
