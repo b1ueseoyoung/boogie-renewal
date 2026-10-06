@@ -105,36 +105,49 @@ public class LoginService {
         return Optional.of(user);
     }
 
-    public boolean isLocked(String userId) {
-        Failures f = userId == null ? null : failures.get(userId);
-        return f != null && f.lockedAt(Instant.now());
+    // 잠금 상태에서 로그인하면 던진다(컨트롤러가 429로 바꾼다)
+    public static class LockedException extends RuntimeException {
+        public LockedException() {
+            super(null, null, false, false);
+        }
     }
 
     public Optional<User> login(LoginRequestDTO request) {
         if (request.userId() == null || request.password() == null || tooLongForBcrypt(request.password())) {
             return Optional.empty();
         }
+        reserveAttempt(request.userId());
         Optional<User> found = userRepository.findById(request.userId());
         // 없는 아이디도 같은 시간을 쓰게 해 응답 시간으로 아이디가 있는지 알 수 없게 한다
         String hash = found.map(User::getPassword).orElse(dummyHash);
         boolean ok = passwordEncoder.matches(request.password(), hash) && found.isPresent();
-        if (ok) {
-            failures.remove(request.userId());
-            return found;
+        if (!ok) {
+            return Optional.empty();
         }
+        failures.remove(request.userId());
+        return found;
+    }
+
+    // 비밀번호를 확인하기 전에 시도 1회를 원자적으로 센다. 동시에 몇 개를 보내도 5분 창 안에서 5번까지만 확인한다.
+    // 다섯 번째 시도가 잠금을 걸고, 그 뒤 요청은 확인 없이 LockedException. 맞힌 요청만 기록을 지운다
+    private void reserveAttempt(String userId) {
         Instant now = Instant.now();
         if (failures.size() >= CLEANUP_AT) {
             failures.values().removeIf(f -> f.expiredAt(now));
         }
-        failures.compute(request.userId(), (id, f) -> {
+        boolean[] locked = {false};
+        failures.compute(userId, (id, f) -> {
             if (f != null && f.lockedAt(now)) {
-                return f; // 다른 요청이 건 잠금을 풀거나 늘리지 않는다
+                locked[0] = true;
+                return f;
             }
             Failures live = (f == null || f.expiredAt(now)) ? new Failures(0, now, null) : f;
             int count = live.count() + 1;
             return new Failures(count, live.windowStart(), count >= MAX_FAILURES ? now.plus(LOCK) : null);
         });
-        return Optional.empty();
+        if (locked[0]) {
+            throw new LockedException();
+        }
     }
 
     public Optional<User> find(String userId) {

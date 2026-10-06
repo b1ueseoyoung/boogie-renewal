@@ -46,11 +46,13 @@ public class LoginController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO body, HttpServletRequest request) {
-        if (loginService.isLocked(body.userId())) {
+        Optional<User> user;
+        try {
+            user = loginService.login(body);
+        } catch (LoginService.LockedException e) {
             return error(HttpStatus.TOO_MANY_REQUESTS,
                     ErrorDTO.of("too_many_attempts", "여러 번 틀렸어요. 5분 뒤에 다시 해 주세요."));
         }
-        Optional<User> user = loginService.login(body);
         if (user.isEmpty()) {
             return error(HttpStatus.UNAUTHORIZED, ErrorDTO.of("bad_credentials", "아이디나 비밀번호가 맞지 않아요."));
         }
