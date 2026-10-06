@@ -29,6 +29,8 @@ public class LoginService {
     // ponytail: 서버 메모리에만 센다. 서버가 여러 대가 되면 DB나 Redis로 옮긴다
     private static final int MAX_FAILURES = 5;
     private static final Duration LOCK = Duration.ofMinutes(5);
+    // 다른 아이디로 계속 틀려도 기록이 끝없이 늘지 않게 한다. 넘치면 지금 잠겨 있지 않은 기록부터 지운다
+    private static final int MAX_TRACKED = 10_000;
     private final Map<String, Failures> failures = new ConcurrentHashMap<>();
 
     private record Failures(int count, Instant lockedUntil) {}
@@ -103,6 +105,10 @@ public class LoginService {
         if (user.isPresent()) {
             failures.remove(request.userId());
         } else {
+            if (failures.size() >= MAX_TRACKED) {
+                Instant now = Instant.now();
+                failures.values().removeIf(f -> f.lockedUntil() == null || now.isAfter(f.lockedUntil()));
+            }
             failures.compute(request.userId(), (id, f) -> {
                 int count = (f == null || f.lockedUntil() != null ? 0 : f.count()) + 1;
                 return new Failures(count, count >= MAX_FAILURES ? Instant.now().plus(LOCK) : null);

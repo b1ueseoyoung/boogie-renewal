@@ -46,6 +46,7 @@ deploy/ec2-push.sh   # 빌드, 전송, 기동. 다시 실행하면 새 이미지
 deploy/ec2-down.sh   # 서버, 디스크, 보안 그룹, 키 페어 삭제. 이후 과금 0
 ```
 
-- 덤프나 데모 계정을 바꿨으면 서버의 MySQL 볼륨을 지운 뒤 다시 올린다(처음 만들 때만 덤프를 읽는다): `ssh ... 'cd ~/kkum && sudo docker compose down && sudo docker volume rm kkum-demo_mysql-data'` 다음 `ec2-push.sh`.
+- 데모 계정 비밀번호만 바꿀 때는 볼륨을 그대로 두고 `ec2-push.sh`만 실행한다(Spring이 기동할 때 `DEMO_PASSWORD`를 반영한다).
+- 덤프를 바꿨을 때는 처음 만들 때만 덤프를 읽으므로 MySQL 볼륨을 지워야 한다. **가입자 계정과 그들이 만든 동화까지 모두 지워지니 DB를 통째로 버려도 될 때만** 한다: `ssh ... 'cd ~/kkum && sudo docker compose down && sudo docker volume rm kkum-demo_mysql-data'` 다음 `ec2-push.sh`.
 - 서버 로그: `ssh -i ~/.ssh/kkum-demo.pem ubuntu@<IP> 'cd ~/kkum && sudo docker compose logs --tail 50'`
 - 비용: 서버(t4g.small)와 공개 IPv4가 시간 단위로 과금된다. 프리티어 계정이면 크레딧에서 빠진다. 크레딧 없이도 하루 1달러 안팎(추정)이다. 중지만 하면 디스크 요금이 계속 나가니, 다 쓰면 `ec2-down.sh`로 지운다.
