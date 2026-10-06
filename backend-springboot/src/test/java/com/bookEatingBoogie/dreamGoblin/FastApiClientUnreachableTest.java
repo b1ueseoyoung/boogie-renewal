@@ -27,7 +27,7 @@ class FastApiClientUnreachableTest {
 
     @Test
     void connectionFailure_becomes502WithErrorBody() throws Exception {
-        MockHttpServletResponse response = mockMvc.perform(post("/test-only/generate")
+        MockHttpServletResponse response = mockMvc.perform(post("/test-only/generate").sessionAttr("userId", "tester")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"imgUrl\":\"x\"}"))
                 .andReturn().getResponse();

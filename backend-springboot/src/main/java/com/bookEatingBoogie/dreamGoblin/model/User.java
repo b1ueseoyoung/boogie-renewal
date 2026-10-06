@@ -20,13 +20,15 @@ public class User {
     @Column(name = "userID", length = 50)
     private String userId;
 
-    @Column(name = "passwd", nullable = false, length = 50)
+    @ToString.Exclude
+    @Column(name = "passwd", nullable = false, length = 100)
     private String password;
 
     @Column(name = "userName", nullable = false, length = 50)
     private String userName;
 
-    @Column(name = "phoneNum", nullable = false, length = 11)
+    //예전 가입 행에만 남아 있다. 새 가입은 전화번호를 받지 않는다.
+    @Column(name = "phoneNum", length = 11)
     private String phoneNum;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

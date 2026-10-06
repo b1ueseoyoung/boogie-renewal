@@ -1,13 +1,23 @@
 {$SITE_ADDRESS} {
-	basic_auth {
-		{$DEMO_USER} {$DEMO_PASSWORD_HASH}
-	}
 	encode gzip
 	handle_path /api/* {
 		reverse_proxy spring:8080
 	}
-	handle_path /fa/* {
+	# 사진과 그림: Spring 로그인 세션(GET /me)이 확인돼야 넘긴다
+	handle /fa/files/* {
+		# 사진 올리기는 10MB까지다(FastAPI 검사). 그보다 큰 본문은 메모리에 올리기 전에 끊는다
+		request_body {
+			max_size 11MB
+		}
+		forward_auth spring:8080 {
+			uri /me
+		}
+		uri strip_prefix /fa
 		reverse_proxy fastapi:8000
+	}
+	# 생성 API, 실험 도구, 오류 주입 같은 나머지 FastAPI 경로는 밖에 열지 않는다
+	handle /fa/* {
+		respond 404
 	}
 	handle {
 		root * /srv

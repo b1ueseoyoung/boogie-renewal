@@ -1,8 +1,5 @@
 import { atom } from 'recoil';
 import testImg from '../assets/images/마법사 유원이.webp';
-import 서영이 from '../assets/images/testImg.png'
-import 유원이 from '../assets/images/유원이.png';
-import 코코 from '../assets/images/코코.png';
 import 코코1 from '../assets/images/코코1.png';
 import 코코2 from '../assets/images/코코2.png';
 
@@ -68,14 +65,10 @@ export const storyInfoState = atom({
   ],
 });
 
-export const userInfoState = atom({
-  key: 'userInfo',
-  default: [{
-    id: 'qwer',
-    password: '',
-    nickname: ' 책먹는부기',
-    pNumber: '010-1234-5678',
-  }]
+// 로그인한 사람. null이면 아직 모르거나 로그인 전(PrivateRoute가 GET /me로 채운다)
+export const authUserState = atom({
+  key: 'authUser',
+  default: null, // { userId, userName }
 });
 
 export const conversationState = atom({

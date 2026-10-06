@@ -11,10 +11,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.SessionAttribute;
 
 // 생성 실패(GenerationException)는 잡지 않는다: GenerationExceptionHandler가 상태 코드와 본문을 그대로 응답으로 만든다.
 @RestController
-@CrossOrigin(origins = "http://localhost:3100")
+@CrossOrigin(origins = "http://localhost:3100", allowCredentials = "true")
 public class CharacterGenerationController {
 
     @Autowired
@@ -22,24 +23,25 @@ public class CharacterGenerationController {
 
     //캐릭터와 첫 후보 생성
     @PostMapping("/character")
-    public ResponseEntity<?> requestCharacter(@RequestBody CharacterRequestDTO character) {
-        return ResponseEntity.ok(characterGenerationService.generateSaveCharacter(character));
+    public ResponseEntity<?> requestCharacter(@RequestBody CharacterRequestDTO character, @SessionAttribute("userId") String userId) {
+        return ResponseEntity.ok(characterGenerationService.generateSaveCharacter(character, userId));
     }
 
     @GetMapping("/character/{charId}/candidates")
-    public ResponseEntity<?> listCandidates(@PathVariable int charId) {
-        return ResponseEntity.ok(characterGenerationService.listCandidates(charId));
+    public ResponseEntity<?> listCandidates(@PathVariable int charId, @SessionAttribute("userId") String userId) {
+        return ResponseEntity.ok(characterGenerationService.listCandidates(charId, userId));
     }
 
     //후보 다시 만들기(3개까지)
     @PostMapping("/character/{charId}/candidates")
-    public ResponseEntity<?> regenerateCandidate(@PathVariable int charId) {
-        return ResponseEntity.ok(characterGenerationService.regenerateCandidate(charId));
+    public ResponseEntity<?> regenerateCandidate(@PathVariable int charId, @SessionAttribute("userId") String userId) {
+        return ResponseEntity.ok(characterGenerationService.regenerateCandidate(charId, userId));
     }
 
     @PostMapping("/character/{charId}/approve")
-    public ResponseEntity<?> approveCandidate(@PathVariable int charId, @RequestBody ApproveRequestDTO request) {
+    public ResponseEntity<?> approveCandidate(@PathVariable int charId, @RequestBody ApproveRequestDTO request,
+                                              @SessionAttribute("userId") String userId) {
         if (request.getCandidateId() == null) { return ResponseEntity.badRequest().build();}
-        return ResponseEntity.ok(characterGenerationService.approveCandidate(charId, request.getCandidateId()));
+        return ResponseEntity.ok(characterGenerationService.approveCandidate(charId, request.getCandidateId(), userId));
     }
 }

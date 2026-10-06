@@ -14,10 +14,8 @@ import com.bookEatingBoogie.dreamGoblin.model.User;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,9 +40,9 @@ public class CharacterGenerationService {
 
     //캐릭터와 첫 후보를 만든다. charLook은 승인 전까지 null이다.
     @Transactional
-    public CharacterReturnDTO generateSaveCharacter(CharacterRequestDTO request) {
+    public CharacterReturnDTO generateSaveCharacter(CharacterRequestDTO request, String userId) {
 
-        User user = userRepository.findById("user")
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
         if (characterRepository.existsByUserAndCharName(user, request.getCharName())) {
@@ -72,16 +70,16 @@ public class CharacterGenerationService {
     }
 
     @Transactional(readOnly = true)
-    public List<CandidateDTO> listCandidates(int charId) {
-        return candidateRepository.findByCharactersOrderByCandidateIdAsc(findCharacter(charId)).stream()
+    public List<CandidateDTO> listCandidates(int charId, String userId) {
+        return candidateRepository.findByCharactersOrderByCandidateIdAsc(findCharacter(charId, userId)).stream()
                 .map(c -> new CandidateDTO(c.getCandidateId(), c.getImgUrl(), c.isApproved()))
                 .toList();
     }
 
     //후보를 하나 더 만든다. 대표 그림(charImg)은 승인 때만 바뀐다.
     @Transactional
-    public CandidateDTO regenerateCandidate(int charId) {
-        Characters characters = findCharacter(charId);
+    public CandidateDTO regenerateCandidate(int charId, String userId) {
+        Characters characters = findCharacter(charId, userId);
         if (candidateRepository.countByCharacters(characters) >= MAX_CANDIDATES) {
             throw failure(409, "candidate_limit", "후보는 세 개까지 만들 수 있어요. 이 중에서 골라 주세요.");
         }
@@ -92,11 +90,11 @@ public class CharacterGenerationService {
 
     //후보를 승인한다. 이미 승인된 후보면 FastAPI를 부르지 않고 저장된 값을 돌려준다.
     @Transactional
-    public Map<String, Object> approveCandidate(int charId, int candidateId) {
+    public Map<String, Object> approveCandidate(int charId, int candidateId, String userId) {
+        Characters characters = findCharacter(charId, userId);
         CharacterCandidate candidate = candidateRepository.findById(candidateId)
                 .filter(c -> c.getCharacters().getCharId() == charId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        Characters characters = candidate.getCharacters();
+                .orElseThrow(() -> failure(404, "not_found", "후보를 찾을 수 없어요."));
 
         if (!candidate.isApproved()) {
             Map<String, String> body = Map.of("imgUrl", characters.getUserImg(), "charImgUrl", candidate.getImgUrl());
@@ -116,9 +114,11 @@ public class CharacterGenerationService {
         return result;
     }
 
-    private Characters findCharacter(int charId) {
-        return characterRepository.findByCharId(charId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    //다른 사람의 캐릭터도 없는 캐릭터와 똑같이 404로 답한다.
+    private Characters findCharacter(int charId, String userId) {
+        return userRepository.findById(userId)
+                .flatMap(user -> characterRepository.findByCharIdAndUser(charId, user))
+                .orElseThrow(() -> failure(404, "not_found", "주인공을 찾을 수 없어요."));
     }
 
     private String generateCharacter(String userImg) {

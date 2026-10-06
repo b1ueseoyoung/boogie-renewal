@@ -1,3 +1,5 @@
+import { redirectIfSessionExpired } from './auth';
+
 // Spring(C-4) 캐릭터 API. 실패하면 C-2 본문을 error로 그대로 돌려준다(본문이 C-2가 아니면 아래 기본 오류).
 const FALLBACK_ERROR = {
   errorClass: 'error',
@@ -12,12 +14,13 @@ const JSON_HEADERS = { 'Content-Type': 'application/json' };
 async function request(path, init) {
   let response;
   try {
-    response = await fetch(`${process.env.REACT_APP_API_BASE_URL}${path}`, init);
+    response = await fetch(`${process.env.REACT_APP_API_BASE_URL}${path}`, { credentials: 'include', ...init });
   } catch (networkError) {
     return { success: false, error: FALLBACK_ERROR };
   }
 
   const body = await response.json().catch(() => null);
+  redirectIfSessionExpired(response.status, body);
 
   if (!response.ok || body === null) {
     return { success: false, error: body && body.errorClass ? body : FALLBACK_ERROR };

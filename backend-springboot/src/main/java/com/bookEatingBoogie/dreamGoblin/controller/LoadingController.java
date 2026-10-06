@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3100")
+@CrossOrigin(origins = "http://localhost:3100", allowCredentials = "true")
 @RequestMapping("/mypage")
 public class LoadingController {
 
@@ -21,17 +21,17 @@ public class LoadingController {
 
     //보관함 내용 반환
     @GetMapping("/story")
-    public StorageDTO loadStorageController() {
-        return loadingService.loadStorage("user");
+    public StorageDTO loadStorageController(@SessionAttribute("userId") String userId) {
+        return loadingService.loadStorage(userId);
     }
     //캐릭터 보관함 내용 반환
     @GetMapping("/character")
-    public List<CharacterDTO> loadCharacter() {
-        return loadingService.loadCharacters("user");
+    public List<CharacterDTO> loadCharacter(@SessionAttribute("userId") String userId) {
+        return loadingService.loadCharacters(userId);
     }
 
     @PostMapping("/story/delete")
-    public StorageDTO deleteSelected(@RequestBody DeleteDTO delete) {
-        return loadingService.deleteStory(delete.getStoryId(), "user");
+    public StorageDTO deleteSelected(@RequestBody DeleteDTO delete, @SessionAttribute("userId") String userId) {
+        return loadingService.deleteStory(delete.getStoryId(), userId);
     }
 }

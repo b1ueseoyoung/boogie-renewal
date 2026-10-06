@@ -50,7 +50,7 @@ class FastApiClientTest {
     }
 
     private MockHttpServletResponse callTestEndpoint() throws Exception {
-        return mockMvc.perform(post("/test-only/generate")
+        return mockMvc.perform(post("/test-only/generate").sessionAttr("userId", "tester")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"imgUrl\":\"x\"}"))
                 .andReturn().getResponse();

@@ -5,7 +5,16 @@ cd "$(dirname "$0")"
 . ./.ec2-state
 KEY=~/.ssh/kkum-demo.pem
 SSH="ssh -i $KEY -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 ubuntu@$IP"
-until $SSH true 2>/dev/null; do sleep 5; done
+# 시도 횟수가 아니라 경과 시간(SECONDS)으로 5분을 센다
+SSH_DEADLINE=$((SECONDS + 300))
+until $SSH true 2>/tmp/kkum-ssh.err; do
+  if [ $SECONDS -ge $SSH_DEADLINE ]; then
+    echo "5분 동안 SSH가 안 됩니다. 노트북 IP가 바뀌었으면 보안 그룹의 22번 규칙을 고쳐 주세요:" >&2
+    tail -2 /tmp/kkum-ssh.err >&2
+    exit 1
+  fi
+  sleep 5
+done
 $SSH 'cloud-init status --wait' >/dev/null
 docker compose build
 docker save kkum/web:demo kkum/spring:demo kkum/fastapi:demo | gzip | $SSH 'gunzip | sudo docker load'

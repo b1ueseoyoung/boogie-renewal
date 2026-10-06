@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { useRecoilValue } from 'recoil';
-import { userInfoState } from '../recoil/atoms';
+import { useRecoilState } from 'recoil';
+import { useNavigate } from 'react-router-dom';
+import { authUserState } from '../recoil/atoms';
+import { logoutUser } from '../api/auth';
 import BaseScreenLayout from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
 import styled from 'styled-components';
@@ -33,15 +35,9 @@ const BlockItem = styled.div`
   margin-bottom: 0.25rem;
 `;
 
-// 회원탈퇴: 위험한 동작이라 빨간펜으로 채운다(원본 값은 흰 바탕 대비 3.27:1이라 4.5:1을 넘는 redpen 5.53:1을 쓴다)
-const DangerButton = styled(RoundedButton)`
-  background: ${({ theme }) => theme.colors.redpen};
-  border-color: ${({ theme }) => theme.colors.redpen};
-  color: ${({ theme }) => theme.colors.surface};
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.redpen};
-  }
+const ErrorText = styled.p`
+  color: ${({ theme }) => theme.colors.redpen};
+  font-size: ${({ theme }) => theme.text.sm};
 `;
 
 const ButtonContainer = styled.div`
@@ -52,15 +48,22 @@ const ButtonContainer = styled.div`
 `;
 
 export default function SettingScreen() {
-  const userInfo = useRecoilValue(userInfoState);
-  const currentUser = userInfo[0] || { id: '', nickname: '', pNumber: '' };
+  const navigate = useNavigate();
+  const [authUser, setAuthUser] = useRecoilState(authUserState);
 
-  const handleLogout = () => {
-    console.log('로그아웃');
-  };
+  const [logoutError, setLogoutError] = useState('');
 
-  const handleDeleteAccount = () => {
-    console.log('회원탈퇴');
+  // 서버 세션이 끝난 뒤에만 브라우저 상태를 비운다. 실패하면 이 화면에 남아 다시 누르게 한다
+  const handleLogout = async () => {
+    setLogoutError('');
+    try {
+      await logoutUser();
+    } catch (err) {
+      setLogoutError('로그아웃하지 못했어요. 잠시 뒤 다시 눌러 주세요.');
+      return;
+    }
+    setAuthUser(null);
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -72,19 +75,14 @@ export default function SettingScreen() {
         {/* 로그인 정보 */}
         <Block>
           <BlockTitle>로그인 정보</BlockTitle>
-          <BlockItem>닉네임: {currentUser.nickname}</BlockItem>
-          <BlockItem>아이디(이메일): {currentUser.id}</BlockItem>
-          <BlockItem>연락처: {currentUser.pNumber}</BlockItem>
+          <BlockItem>이름: {authUser?.userName}</BlockItem>
+          <BlockItem>아이디: {authUser?.userId}</BlockItem>
         </Block>
 
-        {/* 로그아웃 / 회원탈퇴 */}
+        {/* 로그아웃 */}
         <ButtonContainer>
           <RoundedButton onClick={handleLogout}>로그아웃</RoundedButton>
-          <DangerButton
-            onClick={handleDeleteAccount}
-          >
-            회원탈퇴
-          </DangerButton>
+          {logoutError && <ErrorText role="alert">{logoutError}</ErrorText>}
         </ButtonContainer>
       </Container>
     </BaseScreenLayout>
