@@ -35,11 +35,11 @@ public class LoadingService {
     public StorageDTO loadStorage(String userId) {
 
         // 1) 유저 조회
-        User user = userRepository.findById("user")
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
         // 2) 유저별 스토리·캐릭터 조회 & DTO 매핑
-        List<StoryDTO> stories = storyRepository.findAllByUserIdWithCharacters("user")
+        List<StoryDTO> stories = storyRepository.findAllByUserIdWithCharacters(userId)
                 .stream()
                 .map(StoryDTO::new)
                 .toList();
@@ -57,7 +57,7 @@ public class LoadingService {
 
     public List<CharacterDTO> loadCharacters(String userId) {
         // 1) 유저 조회
-        User user = userRepository.findById("user")
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
         return characterRepository.findByUser(user)

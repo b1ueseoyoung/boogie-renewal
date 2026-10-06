@@ -46,6 +46,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 class SceneFlowTest {
 
     private static final String BASE = "http://localhost:8000";
+    private static final String USER_ID = "scene_tester";
     private static final String TIMEOUT_BODY =
             "{\"errorClass\":\"timeout\",\"message\":\"m\",\"retryable\":true,\"resetsAt\":null}";
 
@@ -74,12 +75,11 @@ class SceneFlowTest {
         jdbc.update("DELETE FROM story");
         jdbc.update("DELETE FROM creation");
 
-        User user = userRepository.findByUserId("user").orElseGet(() -> {
+        User user = userRepository.findByUserId(USER_ID).orElseGet(() -> {
             User u = new User();
-            u.setUserId("user");
-            u.setPassword("local-only");
-            u.setUserName("꿈도깨비");
-            u.setPhoneNum("00000000000");
+            u.setUserId(USER_ID);
+            u.setPassword("unused");
+            u.setUserName("장면테스트");
             return userRepository.save(u);
         });
         seedStyle("magic", "genre");
@@ -157,7 +157,8 @@ class SceneFlowTest {
     }
 
     private MockHttpServletResponse call(String path, String json) throws Exception {
-        return mockMvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(json))
+        return mockMvc.perform(post(path).sessionAttr("userId", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON).content(json))
                 .andReturn().getResponse();
     }
 
@@ -259,7 +260,7 @@ class SceneFlowTest {
 
     @Test
     void introForUnapprovedCharacter_is409AndStoresNothing() throws Exception {
-        charId = saveCharacter(userRepository.findByUserId("user").orElseThrow(), null);
+        charId = saveCharacter(userRepository.findByUserId(USER_ID).orElseThrow(), null);
 
         MockHttpServletResponse response = intro();
 

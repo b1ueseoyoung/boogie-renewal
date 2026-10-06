@@ -116,7 +116,7 @@ export default function SelectExistingCharacterScreen() {
   const fetchCharacters = useCallback(async () => {
     setError(null);
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/mypage/character`);
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/mypage/character`, { credentials: 'include' });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
 

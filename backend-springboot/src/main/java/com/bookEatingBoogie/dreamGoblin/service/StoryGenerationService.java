@@ -41,7 +41,7 @@ public class StoryGenerationService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
         Characters characters = characterRepository.findByCharIdAndUser(storyRequest.getCharId(),user)
-                .orElseThrow(() -> new IllegalArgumentException("해당 캐릭터가 존재하지 않거나 사용자의 캐릭터가 아닙니다."));
+                .orElseThrow(() -> failure(404, "not_found", "주인공을 찾을 수 없어요."));
         Style genre = styleRepository.findById(storyRequest.getGenre())
                 .orElseThrow(() -> new IllegalArgumentException("해당 장르가 존재하지 않습니다."));
         Style place = styleRepository.findById(storyRequest.getPlace())

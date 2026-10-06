@@ -1,4 +1,4 @@
-# 꿈도깨비 데모 배포: 저장된 동화 + 새로 만들면 가짜 그림(GEN_FAKE=1, OpenAI·codex 호출 없음).
+# 꿈도깨비 데모 배포: 로그인(데모 계정 demo에 저장된 동화) + 새로 만들면 가짜 그림(GEN_FAKE=1, OpenAI·codex 호출 없음).
 # 값은 deploy/.env(커밋하지 않음). 만드는 법은 docs/DEPLOY-ec2.md.
 name: kkum-demo
 services:
@@ -40,6 +40,9 @@ services:
       DB_USER: dreamgoblin
       DB_PASSWORD: ${MYSQL_PASSWORD}
       FASTAPI_BASE_URL: http://fastapi:8000
+      DEMO_USER_ID: demo
+      SERVER_SERVLET_SESSION_COOKIE_SECURE: ${COOKIE_SECURE:-true}  # 이 Mac에서 http로 확인할 때만 false
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?deploy/.env에 DEMO_PASSWORD가 필요합니다}
     depends_on:
       mysql: {condition: service_healthy}
       fastapi: {condition: service_healthy}
@@ -51,8 +54,6 @@ services:
       dockerfile: deploy/web.Dockerfile
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}  # 서버에서는 ec2-push.sh가 <ip>.sslip.io로 넣는다(자동 HTTPS)
-      DEMO_USER: ${DEMO_USER:?deploy/.env에 DEMO_USER가 필요합니다}
-      DEMO_PASSWORD_HASH: ${DEMO_PASSWORD_HASH:?deploy/.env에 DEMO_PASSWORD_HASH가 필요합니다}
     ports:
       - "${HTTP_BIND:-80}:80"
       - "${HTTPS_BIND:-443}:443"

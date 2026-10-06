@@ -1,16 +1,17 @@
 # 데모 배포 (AWS EC2)
 
 꿈도깨비를 EC2 서버 한 대에 올려 HTTPS 주소로 보여 주는 절차다. 데모 모드라서 OpenAI와 codex를 부르지 않고 생성 비용이 들지 않는다.
-- 책장: 이 Mac에 저장된 동화를 그대로 보여 준다.
+- 로그인: 누구나 가입할 수 있고, 각자 자기 캐릭터와 책만 본다.
+- 데모 계정 `demo`: 이 Mac에 저장된 동화가 들어 있다. 비밀번호는 `deploy/.env`의 `DEMO_PASSWORD`다.
 - 새로 만들기: 끝까지 진행되지만 그림은 가짜(대역)다.
-- 접속: 아이디와 비밀번호가 있어야 들어온다.
 
 ## 구성
 
 ```
-브라우저 ──HTTPS──> Caddy (web: 프론트 + 자동 HTTPS + 아이디·비밀번호)
-                     ├─ /api/* ─> Spring (8080) ─> MySQL
-                     └─ /fa/*  ─> FastAPI (8000, GEN_FAKE=1) ─> 그림 파일(/data)
+브라우저 ──HTTPS──> Caddy (web: 프론트 + 자동 HTTPS)
+                     ├─ /api/*       ─> Spring (8080, 세션 로그인) ─> MySQL
+                     ├─ /fa/files/*  ─> Spring GET /me로 로그인 확인 ─> FastAPI (8000, GEN_FAKE=1) ─> 그림 파일(/data)
+                     └─ 나머지 /fa/* ─> 404 (생성 API, 실험 도구는 밖에 열지 않는다)
 ```
 
 - 주소는 `https://<IP를 -로 이은 것>.sslip.io`다. sslip.io는 IP를 이름으로 바꿔 주는 무료 DNS라서, 도메인 없이도 Caddy가 Let's Encrypt 인증서를 받는다.
@@ -24,16 +25,16 @@
    - 키는 IAM 사용자의 액세스 키이고, 이 사용자에게 `AmazonEC2FullAccess`가 있어야 한다.
    - 리전은 `ap-northeast-2`다.
 3. 데모 데이터를 준비한다. `deploy/seed/dump.sql`, `deploy/data/files/`, `deploy/.env`가 있어야 하고, 모두 gitignore 대상이다.
-   - `dump.sql`: 로컬 DB 덤프다. 그림 주소 `http://localhost:8000/files`를 `/fa/files`로 바꿔 둔다.
+   - `dump.sql`: 로컬 DB 덤프다(`mysqldump --skip-lock-tables --no-tablespaces --set-gtid-purged=OFF`). 그림 주소 `http://localhost:8000/files`를 `/fa/files`로 바꾸고, 끝에 `user` 데이터를 `demo` 계정으로 옮기는 `UPDATE` 두 줄을 붙인다.
    - `data/files`: `data/files/{character,scene,storybook,uploads}`를 복사한다. `storybook/*/content.json` 안의 주소도 같은 방식으로 `/fa/files`로 바꾼다.
-   - `.env`: `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `DEMO_USER`, `DEMO_PASSWORD_HASH`를 넣는다. 해시는 `docker run --rm caddy:2 caddy hash-password --plaintext <비밀번호>`로 만들고, 작은따옴표로 감싼다.
+   - `.env`: `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `DEMO_PASSWORD`(데모 계정 비밀번호)를 넣는다. Spring이 기동할 때 데모 계정을 만들거나 비밀번호를 BCrypt로 맞춘다.
 
 ## 이 Mac에서 먼저 확인
 
 ```bash
 cd deploy
 HTTP_BIND=127.0.0.1:3101 HTTPS_BIND=127.0.0.1:3443 docker compose up -d --build
-# http://localhost:3101 (아이디·비밀번호 필요)
+# http://localhost:3101 (로그인 화면이 뜬다. demo 계정으로 들어간다)
 docker compose down        # 데이터까지 지우려면 down -v
 ```
 
@@ -45,5 +46,6 @@ deploy/ec2-push.sh   # 빌드, 전송, 기동. 다시 실행하면 새 이미지
 deploy/ec2-down.sh   # 서버, 디스크, 보안 그룹, 키 페어 삭제. 이후 과금 0
 ```
 
+- 덤프나 데모 계정을 바꿨으면 서버의 MySQL 볼륨을 지운 뒤 다시 올린다(처음 만들 때만 덤프를 읽는다): `ssh ... 'cd ~/kkum && sudo docker compose down && sudo docker volume rm kkum-demo_mysql-data'` 다음 `ec2-push.sh`.
 - 서버 로그: `ssh -i ~/.ssh/kkum-demo.pem ubuntu@<IP> 'cd ~/kkum && sudo docker compose logs --tail 50'`
 - 비용: 서버(t4g.small)와 공개 IPv4가 시간 단위로 과금된다. 프리티어 계정이면 크레딧에서 빠진다. 크레딧 없이도 하루 1달러 안팎(추정)이다. 중지만 하면 디스크 요금이 계속 나가니, 다 쓰면 `ec2-down.sh`로 지운다.

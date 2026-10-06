@@ -114,6 +114,7 @@ export default function StoryQuestionScreen() {
     try {
       res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/intro`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });

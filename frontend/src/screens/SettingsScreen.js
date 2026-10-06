@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { useRecoilValue } from 'recoil';
-import { userInfoState } from '../recoil/atoms';
+import React from 'react';
+import { useRecoilState } from 'recoil';
+import { useNavigate } from 'react-router-dom';
+import { authUserState } from '../recoil/atoms';
+import { logoutUser } from '../api/auth';
 import BaseScreenLayout from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
 import styled from 'styled-components';
@@ -52,11 +54,18 @@ const ButtonContainer = styled.div`
 `;
 
 export default function SettingScreen() {
-  const userInfo = useRecoilValue(userInfoState);
-  const currentUser = userInfo[0] || { id: '', nickname: '', pNumber: '' };
+  const navigate = useNavigate();
+  const [authUser, setAuthUser] = useRecoilState(authUserState);
 
-  const handleLogout = () => {
-    console.log('로그아웃');
+  // 서버 로그아웃이 실패해도 브라우저 쪽 상태는 비우고 로그인 화면으로 보낸다
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.error('로그아웃 요청 실패:', err);
+    }
+    setAuthUser(null);
+    navigate('/login', { replace: true });
   };
 
   const handleDeleteAccount = () => {
@@ -72,9 +81,8 @@ export default function SettingScreen() {
         {/* 로그인 정보 */}
         <Block>
           <BlockTitle>로그인 정보</BlockTitle>
-          <BlockItem>닉네임: {currentUser.nickname}</BlockItem>
-          <BlockItem>아이디(이메일): {currentUser.id}</BlockItem>
-          <BlockItem>연락처: {currentUser.pNumber}</BlockItem>
+          <BlockItem>이름: {authUser?.userName}</BlockItem>
+          <BlockItem>아이디: {authUser?.userId}</BlockItem>
         </Block>
 
         {/* 로그아웃 / 회원탈퇴 */}

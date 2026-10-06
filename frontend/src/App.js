@@ -1,6 +1,8 @@
-import React ,{ useEffect }from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
-import { RecoilRoot } from 'recoil';
+import { RecoilRoot, useRecoilState } from 'recoil';
+import { authUserState } from './recoil/atoms';
+import { fetchMe } from './api/auth';
 import { ThemeProvider } from 'styled-components';
 import GlobalStyle from './styles/GlobalStyle';
 import theme from './styles/theme';
@@ -30,10 +32,30 @@ import BottomNav from './components/BottomNav';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-function PrivateRoute({ children }) {
-  // --- 로그인 검증 (백연동 후 주석 해제) ---
-  // const token = localStorage.getItem('jwt');
-  // return token ? children : <Navigate to="/login" replace />;
+// 세션을 모르면 GET /me로 한 번 묻는다. 묻는 동안은 아무것도 그리지 않고, 401이면 로그인 화면으로 보낸다
+function PrivateRoute() {
+  const location = useLocation();
+  const [user, setUser] = useRecoilState(authUserState);
+  const [checked, setChecked] = useState(Boolean(user));
+
+  useEffect(() => {
+    if (user) return undefined;
+    let cancelled = false;
+    fetchMe()
+      .then(({ data }) => {
+        if (!cancelled) setUser({ userId: data.userId, userName: data.userName });
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, setUser]);
+
+  if (!checked) return null;
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   return <Outlet />;
 }
 

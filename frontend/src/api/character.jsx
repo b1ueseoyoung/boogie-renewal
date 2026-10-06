@@ -12,7 +12,7 @@ const JSON_HEADERS = { 'Content-Type': 'application/json' };
 async function request(path, init) {
   let response;
   try {
-    response = await fetch(`${process.env.REACT_APP_API_BASE_URL}${path}`, init);
+    response = await fetch(`${process.env.REACT_APP_API_BASE_URL}${path}`, { credentials: 'include', ...init });
   } catch (networkError) {
     return { success: false, error: FALLBACK_ERROR };
   }

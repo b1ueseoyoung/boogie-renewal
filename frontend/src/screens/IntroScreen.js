@@ -243,7 +243,7 @@ export default function IntroScreen() {
   // 최근에 만든 책. 못 불러오면 줄을 보이지 않는다(홈의 주된 일은 새 이야기 만들기다)
   useEffect(() => {
     let cancelled = false;
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/mypage/story`)
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/mypage/story`, { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!cancelled && data && Array.isArray(data.stories)) setBooks(data.stories.slice(-RECENT).reverse());

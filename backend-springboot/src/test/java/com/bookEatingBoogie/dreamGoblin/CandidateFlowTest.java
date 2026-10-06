@@ -46,6 +46,7 @@ class CandidateFlowTest {
 
     private static final String BASE = "http://localhost:8000";
     private static final String PHOTO = BASE + "/files/uploads/photo.jpg";
+    private static final String USER_ID = "candidate_tester";
     private static final String LOOK = "A child with short black hair. Wearing a blue T-shirt.";
     private static final String DECLINED_BODY =
             "{\"errorClass\":\"declined\",\"message\":\"m\",\"retryable\":false,\"resetsAt\":null}";
@@ -68,12 +69,11 @@ class CandidateFlowTest {
 
     @BeforeEach
     void setUp() {
-        if (userRepository.findByUserId("user").isEmpty()) {
+        if (userRepository.findByUserId(USER_ID).isEmpty()) {
             User u = new User();
-            u.setUserId("user");
-            u.setPassword("local-only");
-            u.setUserName("꿈도깨비");
-            u.setPhoneNum("00000000000");
+            u.setUserId(USER_ID);
+            u.setPassword("unused");
+            u.setUserName("후보테스트");
             userRepository.save(u);
         }
         seedStyle("magic", "genre");
@@ -118,7 +118,8 @@ class CandidateFlowTest {
     }
 
     private MockHttpServletResponse call(String path, String json) throws Exception {
-        return mockMvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(json))
+        return mockMvc.perform(post(path).sessionAttr("userId", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON).content(json))
                 .andReturn().getResponse();
     }
 
@@ -195,7 +196,7 @@ class CandidateFlowTest {
         assertEquals("candidate_limit", json(fourth).get("errorClass").asText());
         assertEquals(3, candidateCount(charId));
 
-        JsonNode list = json(mockMvc.perform(get("/character/" + charId + "/candidates")).andReturn().getResponse());
+        JsonNode list = json(mockMvc.perform(get("/character/" + charId + "/candidates").sessionAttr("userId", USER_ID)).andReturn().getResponse());
         assertEquals(3, list.size());
         assertEquals(img(1), list.get(0).get("imgUrl").asText());
         assertEquals(img(3), list.get(2).get("imgUrl").asText());

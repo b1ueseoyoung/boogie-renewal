@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: ko-KR
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  path_filters:
+    - "!**/package-lock.json"
+    - "!**/bun.lock"
+    - "!**/uv.lock"
+    - "!frontend/src/assets/**"
+    - "!frontend/public/fonts/**"
+  auto_review:
+    enabled: true
+    drafts: false
+chat:
+  auto_reply: true
