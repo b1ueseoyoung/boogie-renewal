@@ -35,6 +35,8 @@ function validate({ userID, password, confirm, userName }) {
   const errors = {};
   if (!ID_RULE.test(userID)) errors.userID = '아이디는 영문 소문자, 숫자, _ 로 4~20자예요';
   if (password.length < 8 || password.length > 64) errors.password = '비밀번호는 8자 이상 64자 이하예요';
+  // 서버(BCrypt)는 72바이트까지만 받는다. 한글은 한 글자가 3바이트라 64자 안에서도 넘을 수 있다
+  else if (new TextEncoder().encode(password).length > 72) errors.password = '비밀번호가 너무 길어요. 조금 줄여 주세요';
   if (confirm !== password) errors.confirm = '비밀번호가 서로 달라요';
   if (userName.length < 1 || userName.length > 20) errors.userName = '이름을 1~20자로 적어 주세요';
   return errors;

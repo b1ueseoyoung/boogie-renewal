@@ -4,9 +4,12 @@ import com.bookEatingBoogie.dreamGoblin.DTO.LoginRequestDTO;
 import com.bookEatingBoogie.dreamGoblin.DTO.SignupRequestDTO;
 import com.bookEatingBoogie.dreamGoblin.Repository.UserRepository;
 import com.bookEatingBoogie.dreamGoblin.model.User;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -21,10 +24,15 @@ public class LoginService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EntityManager entityManager;
+    private final TransactionTemplate transactionTemplate;
 
-    public LoginService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public LoginService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                        EntityManager entityManager, TransactionTemplate transactionTemplate) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.entityManager = entityManager;
+        this.transactionTemplate = transactionTemplate;
     }
 
     //가입 입력이 틀리면 안내 문구, 맞으면 null.
@@ -46,8 +54,8 @@ public class LoginService {
         return null;
     }
 
-    // ponytail: 확인과 저장 사이에 같은 아이디로 동시에 가입하면 나중 저장이 덮어쓸 수 있다. 가입이 많아지면 persist로 바꿔 중복 키 오류를 409로 돌린다.
-    @Transactional
+    // 가입은 merge(save)가 아니라 insert(persist)로 한다. 같은 아이디로 동시에 가입해도 기존 계정을 덮어쓰지 않고,
+    // 늦은 쪽은 중복 키 오류로 끝나 빈 값(409)을 돌려준다.
     public Optional<User> signup(SignupRequestDTO request) {
         if (userRepository.existsById(request.userId())) {
             return Optional.empty();
@@ -56,7 +64,15 @@ public class LoginService {
         user.setUserId(request.userId());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setUserName(request.userName().trim());
-        return Optional.of(userRepository.save(user));
+        try {
+            transactionTemplate.executeWithoutResult(status -> {
+                entityManager.persist(user);
+                entityManager.flush();
+            });
+        } catch (DataIntegrityViolationException | PersistenceException e) {
+            return Optional.empty();
+        }
+        return Optional.of(user);
     }
 
     public Optional<User> login(LoginRequestDTO request) {

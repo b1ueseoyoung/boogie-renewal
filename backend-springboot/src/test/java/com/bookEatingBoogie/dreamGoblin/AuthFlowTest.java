@@ -305,6 +305,12 @@ class AuthFlowTest {
 
         JsonNode storageA = body(perform(get("/mypage/story").sessionAttr("userId", a)).getResponse());
         assertEquals(story.getStoryId(), storageA.get("stories").get(0).get("storyId").asText());
+
+        // B가 A의 책을 지우려 하면 404이고 책은 그대로다
+        MockHttpServletResponse deleteByB = perform(post("/mypage/story/delete").sessionAttr("userId", b)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"storyId\":\"" + story.getStoryId() + "\"}")).getResponse();
+        assertError(deleteByB, 404, "not_found");
+        assertTrue(storyRepository.findByStoryId(story.getStoryId()).isPresent());
         server.verify();
     }
 

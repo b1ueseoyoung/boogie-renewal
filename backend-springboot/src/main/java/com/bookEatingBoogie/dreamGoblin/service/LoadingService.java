@@ -68,15 +68,11 @@ public class LoadingService {
 
     @Transactional
     public StorageDTO deleteStory(String storyId, String userId) {
-        System.out.println("삭제 요청된 storyId: " + storyId);
-
+        // 없는 책과 남의 책은 같은 404로 답한다(남의 책이 있는지 알려 주지 않는다)
         Story target = storyRepository.findByStoryIdWithAllRelations(storyId)
-                .orElseThrow(() -> new IllegalArgumentException("스토리를 찾을 수 없습니다."));
-
-        String ownerId = target.getCreation().getCharacters().getUser().getUserId();
-        if (!ownerId.equals(userId)) {
-            throw new SecurityException("본인의 스토리만 삭제할 수 없습니다.");
-        }
+                .filter(story -> story.getCreation().getCharacters().getUser().getUserId().equals(userId))
+                .orElseThrow(() -> new GenerationException(404,
+                        "{\"errorClass\":\"not_found\",\"message\":\"책을 찾을 수 없어요.\",\"retryable\":false,\"resetsAt\":null}"));
 
         // 관계만 끊어줌 (불필요할 경우 생략 가능)
         target.getCreation().setStory(null);

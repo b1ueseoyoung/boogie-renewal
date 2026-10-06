@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 import { authUserState } from '../recoil/atoms';
@@ -46,6 +46,11 @@ const DangerButton = styled(RoundedButton)`
   }
 `;
 
+const ErrorText = styled.p`
+  color: ${({ theme }) => theme.colors.redpen};
+  font-size: ${({ theme }) => theme.text.sm};
+`;
+
 const ButtonContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -57,12 +62,16 @@ export default function SettingScreen() {
   const navigate = useNavigate();
   const [authUser, setAuthUser] = useRecoilState(authUserState);
 
-  // 서버 로그아웃이 실패해도 브라우저 쪽 상태는 비우고 로그인 화면으로 보낸다
+  const [logoutError, setLogoutError] = useState('');
+
+  // 서버 세션이 끝난 뒤에만 브라우저 상태를 비운다. 실패하면 이 화면에 남아 다시 누르게 한다
   const handleLogout = async () => {
+    setLogoutError('');
     try {
       await logoutUser();
     } catch (err) {
-      console.error('로그아웃 요청 실패:', err);
+      setLogoutError('로그아웃하지 못했어요. 잠시 뒤 다시 눌러 주세요.');
+      return;
     }
     setAuthUser(null);
     navigate('/login', { replace: true });
@@ -88,6 +97,7 @@ export default function SettingScreen() {
         {/* 로그아웃 / 회원탈퇴 */}
         <ButtonContainer>
           <RoundedButton onClick={handleLogout}>로그아웃</RoundedButton>
+          {logoutError && <ErrorText role="alert">{logoutError}</ErrorText>}
           <DangerButton
             onClick={handleDeleteAccount}
           >
