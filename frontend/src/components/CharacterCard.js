@@ -1,31 +1,51 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import Card from './Card';
 
-const CardContainer = styled.div`
-  background-color: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.ink};
-  border: ${({ theme }) => theme.border.thick};
-  border-radius: ${({ theme }) => theme.radius.card};
-  padding: 20px;
+// 캐릭터 정보 카드(흰 카드 + 가는 테두리). 누르면 캐릭터 만들기로 간다. 키보드로도 누를 수 있게 button으로 그린다
+const CardContainer = styled(Card)`
+  display: block;
   width: 100%;
-  max-width: 400px;
+  max-width: 25rem;
   margin: 0 auto;
-  cursor: pointer;
+  color: ${({ theme }) => theme.colors.ink};
   text-align: center;
+  cursor: pointer;
+
+  /* 올리면 테두리가 조금 진해지고 옅은 그림자가 생긴다(뜨지 않는다) */
+  @media ${({ theme }) => theme.mq.hover} {
+    &:hover {
+      border-color: ${({ theme }) => theme.colors.lineStrong};
+      box-shadow: ${({ theme }) => theme.shadow.cardHover};
+    }
+  }
 `;
 
-const CardTitle = styled.h3`
-  margin: 0;
-  margin-bottom: 10px;
-  font-size: 16px;
+// button 안이라 제목·줄은 span(블록)으로 둔다
+const CardTitle = styled.span`
+  display: block;
+  margin-bottom: ${({ theme }) => theme.space[3]};
+  padding-bottom: ${({ theme }) => theme.space[2]};
   border-bottom: ${({ theme }) => theme.border.rule};
-  padding-bottom: 8px;
+  font-family: ${({ theme }) => theme.fonts.display};
+  font-size: ${({ theme }) => theme.text.lg};
+  font-weight: ${({ theme }) => theme.weight.semibold};
+  line-height: ${({ theme }) => theme.leading.tight};
+  letter-spacing: ${({ theme }) => theme.tracking.tight};
 `;
 
-const InfoLine = styled.p`
-  margin: 4px 0;
-  font-size: 14px;
+const InfoLine = styled.span`
+  display: block;
+  font-size: ${({ theme }) => theme.text.sm};
+  line-height: 1.6;
+  color: ${({ theme }) => theme.colors.inkSoft};
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  & + & {
+    margin-top: ${({ theme }) => theme.space[1]};
+  }
 `;
 
 function CharacterCard({ name, age, gender, job, speciality, finalResponse }) {
@@ -43,7 +63,7 @@ function CharacterCard({ name, age, gender, job, speciality, finalResponse }) {
       : finalResponse;
 
   return (
-    <CardContainer onClick={handleClick}>
+    <CardContainer as="button" type="button" $pad="md" onClick={handleClick}>
       <CardTitle>캐릭터 카드</CardTitle>
       {finalResponse ? (
         <InfoLine>{displayResponse}</InfoLine>

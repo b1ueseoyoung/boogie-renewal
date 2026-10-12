@@ -1,68 +1,59 @@
-import styled from "styled-components";
-import imageSrc from "../assets/images/empty.png";
+import styled from 'styled-components';
+import dokkaebiWhere from '../assets/images/dokkaebi_where.png';
+import RoundedButton from './RoundedButton';
+import { SunDisc } from './BaseScreenLayout';
 
+// 빈 상태: 옅은 파랑 원 위에 고개를 갸웃하는 도깨비 → 제목 → 설명 → 할 일 버튼(있을 때만)
 const Container = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  gap: 1rem;
-  text-align: center;
+  gap: ${({ theme }) => theme.space[3]};
   width: 100%;
-  height: 90vh;
-  min-height: 300px; // 높이 부족으로 줄어들 때 대비
+  min-height: 50vh;
+  padding: ${({ theme }) => `${theme.space[7]} ${theme.space[4]}`};
+  text-align: center;
 `;
 
-
-const Image = styled.img`
-  width: 150px;
-  height: 150px;
-  object-fit: contain;
+const Art = styled(SunDisc)`
+  width: clamp(10rem, 8rem + 6vw, 12rem);
+  margin-bottom: ${({ theme }) => theme.space[3]};
 `;
 
 const Title = styled.h2`
+  font-size: ${({ theme }) => theme.text['2xl']};
   color: ${({ theme }) => theme.colors.ink};
-  text-align: center;
-  font-size: 2.5rem;
-  font-style: normal;
-  font-weight: 700;
-  line-height: normal;
-  letter-spacing: -0.05rem;
+  text-wrap: balance;
 `;
 
 const Description = styled.p`
-  color: ${({ theme }) => theme.colors.ink};
-  text-align: center;
-  font-size: 1rem;
-  font-style: normal;
-  font-weight: 400;
-  line-height: normal;
-  letter-spacing: -0.02rem;
+  max-width: 32ch;
+  font-size: ${({ theme }) => theme.text.base};
+  color: ${({ theme }) => theme.colors.inkSoft};
+  text-wrap: balance;
 `;
 
-const Button = styled.button`
-  background-color: ${({ theme }) => theme.colors.accent};
-  color: ${({ theme }) => theme.colors.accentInk};
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.5rem 1.5rem;
-  border: none;
-  border-radius: 50px;
-  cursor: pointer;
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.accentDeep};
+const Action = styled(RoundedButton)`
+  &&& {
+    margin-top: ${({ theme }) => theme.space[4]};
   }
 `;
 
 export default function Empty({ title, description, buttonText, onButtonClick }) {
   return (
     <Container>
-      <Title>{title}</Title>
-      <Description>{description}</Description>
-      {buttonText && <Button onClick={onButtonClick}>{buttonText}</Button>}
-      <Image src={imageSrc} alt="empty-state" />
+      <Art aria-hidden="true">
+        <img src={dokkaebiWhere} alt="" />
+      </Art>
+      {title && <Title>{title}</Title>}
+      {description && <Description>{description}</Description>}
+      {buttonText && (
+        <Action type="button" $primary $inline onClick={onButtonClick}>
+          {buttonText}
+        </Action>
+      )}
     </Container>
   );
 }

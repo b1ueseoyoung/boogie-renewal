@@ -1,29 +1,13 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useSetRecoilState } from 'recoil';
 import { authUserState } from '../recoil/atoms';
 import { signupUser, errorMessage, errorClass } from '../api/auth';
 import BaseScreenLayout from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
-import FormField, { FormStack, TextButton, Mascot } from '../components/FormField';
+import FormField, { FormStack, FormAlert, AltLine, TextButton, Mascot, AuthBrand } from '../components/FormField';
 
 const ID_RULE = /^[a-z0-9_]{4,20}$/;
-
-const Form = styled(FormStack)`
-  max-width: 38rem;
-`;
-
-const Fields = styled.div`
-  display: grid;
-  gap: ${({ theme }) => theme.space[3]};
-  grid-template-columns: 1fr;
-
-  @media (min-width: 52.0625rem) {
-    grid-template-columns: 1fr 1fr;
-    column-gap: ${({ theme }) => theme.space[4]};
-  }
-`;
 
 function validate({ userID, password, confirm, userName }) {
   const errors = {};
@@ -60,6 +44,7 @@ export default function SignupScreen() {
       setAuthUser({ userId: data.userId, userName: data.userName });
       navigate('/', { replace: true });
     } catch (err) {
+      // 아이디 중복은 아이디 칸에, 그 밖의 서버·네트워크 오류는 버튼 위 폼 오류 줄(errors.form)에 보인다
       const key = errorClass(err) === 'duplicate_id' ? 'userID' : 'form';
       setErrors({ [key]: errorMessage(err) });
       setPending(false);
@@ -67,55 +52,63 @@ export default function SignupScreen() {
   };
 
   return (
-    <BaseScreenLayout title="처음 왔구나, 반가워요!" subTitle="아이디와 이름을 정하면 바로 시작할 수 있어요." aside={<Mascot />}>
-      <Form onSubmit={handleSubmit} noValidate>
-        <Fields>
-          <FormField
-            id="userID"
-            label="아이디"
-            autoComplete="username"
-            autoCapitalize="none"
-            value={userID}
-            onChange={(e) => setUserID(e.target.value)}
-            hint="영문 소문자, 숫자, _ 로 4~20자"
-            error={errors.userID}
-          />
-          <FormField
-            id="userName"
-            label="이름"
-            autoComplete="name"
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-            hint="책에 적힐 이름이에요"
-            error={errors.userName}
-          />
-          <FormField
-            id="password"
-            label="비밀번호"
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            hint="8자 이상"
-            error={errors.password}
-          />
-          <FormField
-            id="confirm"
-            label="비밀번호 확인"
-            type="password"
-            autoComplete="new-password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            error={errors.confirm || errors.form}
-          />
-        </Fields>
+    <BaseScreenLayout
+      title="처음 왔구나, 반가워요!"
+      subTitle="아이디와 이름을 정하면 바로 시작할 수 있어요."
+      aside={<Mascot />}
+      brand={<AuthBrand />}
+    >
+      {/* 넓은 화면에서도 한 열로 쌓는다. 칸 사이 리듬은 FormStack 간격과 칸마다 비워 둔 도움말 한 줄이 맞춘다 */}
+      <FormStack onSubmit={handleSubmit} noValidate>
+        <FormField
+          id="userID"
+          label="아이디"
+          autoComplete="username"
+          autoCapitalize="none"
+          value={userID}
+          onChange={(e) => setUserID(e.target.value)}
+          hint="영문 소문자, 숫자, _ 로 4~20자"
+          error={errors.userID}
+        />
+        <FormField
+          id="userName"
+          label="이름"
+          autoComplete="name"
+          value={userName}
+          onChange={(e) => setUserName(e.target.value)}
+          hint="책에 적힐 이름이에요"
+          error={errors.userName}
+        />
+        <FormField
+          id="password"
+          label="비밀번호"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          hint="8자 이상"
+          error={errors.password}
+        />
+        <FormField
+          id="confirm"
+          label="비밀번호 확인"
+          type="password"
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          error={errors.confirm}
+        />
+        <FormAlert>{errors.form}</FormAlert>
         <RoundedButton type="submit" $primary disabled={pending}>
           {pending ? '준비하는 중…' : '가입하고 시작하기'}
         </RoundedButton>
-        <TextButton type="button" onClick={() => navigate('/login')}>
-          이미 계정이 있어요? 로그인
-        </TextButton>
-      </Form>
+        <AltLine>
+          이미 계정이 있어요?
+          <TextButton type="button" onClick={() => navigate('/login')}>
+            로그인
+          </TextButton>
+        </AltLine>
+      </FormStack>
     </BaseScreenLayout>
   );
 }

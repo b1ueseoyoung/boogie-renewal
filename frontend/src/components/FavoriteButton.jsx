@@ -2,25 +2,50 @@ import React from 'react';
 import { useRecoilState } from 'recoil';
 import { favoriteStoryIdsState } from '../recoil/atoms';
 import { BsStar, BsStarFill } from 'react-icons/bs';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 
-const Button = styled.div`
+// 표지 오른쪽 위의 즐겨찾기 별. 보이는 원은 2.25rem이고, 누르는 자리는 ::before로 theme.tap(44px)까지 넓힌다.
+// 켜지면 해 색(sunPale 바탕 + sun 테두리 + sunDeep 채운 별, 3.38:1), 꺼지면 흰 원 + 가는 테두리 + inkMuted 빈 별(4.62:1)
+const Button = styled.button`
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: ${({ theme }) => theme.space[2]};
+  right: ${({ theme }) => theme.space[2]};
   z-index: 2;
-  padding: 0.25rem;
-  background: ${({ theme }) => theme.colors.surface};
-  border: ${({ theme }) => theme.border.rule};
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: none;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: ${({ theme, $on }) => ($on ? theme.colors.sunPale : theme.colors.surface)};
+  color: ${({ theme, $on }) => ($on ? theme.colors.sunDeep : theme.colors.inkMuted)};
+  /* 가는 테두리는 안쪽 선으로 그린다(border를 두면 ::before의 누르는 자리가 44px보다 작아진다) */
+  box-shadow: inset 0 0 0 1px ${({ theme, $on }) => ($on ? theme.colors.sun : theme.colors.line)};
   cursor: pointer;
+
+  @media ${({ theme }) => theme.mq.hover} {
+    &:hover {
+      background: ${({ theme, $on }) => ($on ? theme.colors.sunPale : theme.colors.surface2)};
+      color: ${({ theme, $on }) => ($on ? theme.colors.sunDeep : theme.colors.inkSoft)};
+    }
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: calc((2.25rem - ${({ theme }) => theme.tap}) / 2);
+    border-radius: 50%;
+  }
+
+  & svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
 `;
 
-export default function FavoriteButton({ storyId }) {
-  const theme = useTheme();
+// title: 어느 책의 별인지 화면 읽기에 알린다("숲속 모험 즐겨찾기")
+export default function FavoriteButton({ storyId, title }) {
   const [favoriteIds, setFavoriteIds] = useRecoilState(favoriteStoryIdsState);
   const isFavorite = favoriteIds.includes(storyId);
 
@@ -32,8 +57,8 @@ export default function FavoriteButton({ storyId }) {
   };
 
   return (
-    <Button onClick={handleClick}>
-      {isFavorite ? <BsStarFill color={theme.colors.accent} size={16} /> : <BsStar color={theme.colors.inkSoft} size={16} />}
+    <Button type="button" $on={isFavorite} aria-pressed={isFavorite} aria-label={title ? `${title} 즐겨찾기` : '즐겨찾기'} onClick={handleClick}>
+      {isFavorite ? <BsStarFill aria-hidden="true" /> : <BsStar aria-hidden="true" />}
     </Button>
   );
 }

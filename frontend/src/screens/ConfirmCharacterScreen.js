@@ -5,8 +5,11 @@ import styled from 'styled-components';
 import { characterInfoState } from '../recoil/atoms';
 import BaseScreenLayout, { PaperFrame } from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
+import TextButton from '../components/TextButton';
 import WaitingOverlay from '../components/WaitingOverlay';
 import GenerationError from '../components/GenerationError';
+import Skeleton from '../components/Skeleton';
+import { PickCheck, pickedRing } from '../components/Pick';
 import { getCandidates, regenerateCandidate, approveCandidate } from '../api/character';
 
 const MAX_CANDIDATES = 3;
@@ -16,71 +19,113 @@ const WAITING = {
   approve: '도깨비가 주인공을 기억하고 있어요',
 };
 
+// 원본 사진과 동화 속 모습을 휴대폰에서도 두 칸으로 나란히 둔다(닮았는지 한눈에 비교)
 const Compare = styled.div`
   display: grid;
-  gap: ${({ theme }) => theme.space[6]};
-  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 20rem));
-  justify-content: center;
-  margin-top: ${({ theme }) => theme.space[3]};
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: ${({ theme }) => theme.space[4]};
+  align-items: start;
+
+  @media ${({ theme }) => theme.mq.phone} {
+    gap: ${({ theme }) => theme.space[3]};
+  }
 `;
 
-// 시안 C: 사진과 후보는 기울기 없이 흰 칸 위에 나란히 둔다(닮음 판단)
-const Frame = PaperFrame;
+// 옅은 회색 판(surface2) 위의 그림. 두 칸 격자 안이라 폭 제한과 위 여백은 격자에 맡긴다
+const Frame = styled(PaperFrame)`
+  max-width: none;
+  margin: 0;
 
+  @media ${({ theme }) => theme.mq.phone} {
+    padding: ${({ theme }) => theme.space[2]};
+  }
+`;
+
+// 사진은 얼굴 쪽(위 30%)을, 동화 그림은 머리부터 보이게 3:4로 채운다
 const Art = styled.img`
   display: block;
   width: 100%;
   aspect-ratio: 3 / 4;
-  object-fit: contain;
-  border-radius: ${({ theme }) => theme.radius.tag};
+  object-fit: cover;
+  object-position: ${({ $photo }) => ($photo ? 'center 30%' : 'center top')};
+  border-radius: ${({ theme }) => theme.radius.inner};
+  background: ${({ theme }) => theme.colors.surface2};
 `;
 
+// 후보를 불러오는 동안 그림 자리(공통 Skeleton, 다른 화면의 빈 자리와 같은 깜빡임)
+const ArtSkeleton = styled(Skeleton)`
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: ${({ theme }) => theme.radius.inner};
+`;
+
+// 그림 이름: 회색 판 위라 inkSoft(6.5:1) medium
 const Caption = styled.figcaption`
   margin-top: ${({ theme }) => theme.space[2]};
   font-family: ${({ theme }) => theme.fonts.display};
   font-size: ${({ theme }) => theme.text.sm};
-  font-weight: 600;
+  font-weight: ${({ theme }) => theme.weight.medium};
+  line-height: ${({ theme }) => theme.leading.tight};
   color: ${({ theme }) => theme.colors.inkSoft};
   text-align: center;
 `;
 
+// 묶음 라벨: 입력칸 라벨과 같은 15px semibold ink
 const SectionLabel = styled.p`
-  margin-top: ${({ theme }) => theme.space[6]};
   margin-bottom: ${({ theme }) => theme.space[3]};
   font-family: ${({ theme }) => theme.fonts.display};
-  font-size: ${({ theme }) => theme.text.base};
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.inkSoft};
+  font-size: ${({ theme }) => theme.text.md};
+  font-weight: ${({ theme }) => theme.weight.semibold};
+  line-height: ${({ theme }) => theme.leading.tight};
+  color: ${({ theme }) => theme.colors.ink};
 `;
 
+// 후보 썸네일: 세 칸까지 한 줄, 칸은 7.5rem을 넘지 않는다
 const Thumbs = styled.div`
   display: grid;
+  grid-template-columns: repeat(${MAX_CANDIDATES}, minmax(0, 7.5rem));
   gap: ${({ theme }) => theme.space[3]};
-  grid-template-columns: repeat(auto-fit, minmax(min(7.5rem, 45%), 11rem));
-
-  /* auto-fit counts tracks by the 11rem maximum, which leaves one column on a phone; two columns there */
-  @media (max-width: 30rem) {
-    grid-template-columns: repeat(2, 1fr);
-  }
 `;
 
+// 고르는 썸네일: 흰 바탕 + 가는 테두리(카드와 같은 line). 올리면 surface2 바탕에 테두리가 조금 진해진다.
+// 고르면 공통 선택 표시(옅은 파랑 바탕 + 파란 고리 + 체크 원), 글자는 accentDeep(7.1:1)
 const Thumb = styled.button`
   position: relative;
-  padding: ${({ theme }) => theme.space[2]};
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space[1]};
+  min-width: 0;
   min-height: ${({ theme }) => theme.tap};
+  padding: ${({ theme }) => theme.space[1]};
+  border: ${({ theme }) => theme.border.card};
+  border-radius: ${({ theme }) => theme.radius.art};
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.inkSoft};
   font-family: ${({ theme }) => theme.fonts.display};
   font-size: ${({ theme }) => theme.text.sm};
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.inkSoft};
-  background: ${({ theme }) => theme.colors.surface};
-  border: ${({ theme }) => theme.border.rule};
-  border-radius: ${({ theme }) => theme.radius.card};
+  font-weight: ${({ theme }) => theme.weight.semibold};
+  line-height: ${({ theme }) => theme.leading.tight};
+  text-align: center;
   cursor: pointer;
-  transition: background-color ${({ theme }) => `${theme.motion.base} ${theme.motion.ease}`};
+
+  @media ${({ theme }) => theme.mq.hover} {
+    &:hover {
+      background: ${({ theme }) => theme.colors.surface2};
+      border-color: ${({ theme }) => theme.colors.lineStrong};
+      color: ${({ theme }) => theme.colors.ink};
+    }
+  }
 
   &[aria-pressed='true'] {
     background: ${({ theme }) => theme.colors.accentPale};
-    color: ${({ theme }) => theme.colors.ink};
+    border-color: transparent;
+    box-shadow: ${({ theme }) => pickedRing(theme)};
+    color: ${({ theme }) => theme.colors.accentDeep};
+  }
+
+  /* 포커스 고리는 고른 고리 바깥에 떨어뜨려 그린다 */
+  &:focus-visible {
+    outline-offset: 0.375rem;
   }
 `;
 
@@ -89,64 +134,40 @@ const ThumbArt = styled.img`
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
-  border-radius: ${({ theme }) => theme.radius.tag};
+  object-position: top;
+  border-radius: ${({ theme }) => theme.radius.inner};
+  background: ${({ theme }) => theme.colors.surface2};
 `;
 
 const ThumbLabel = styled.span`
   display: block;
-  margin-top: ${({ theme }) => theme.space[1]};
-  text-align: center;
+  padding-bottom: ${({ theme }) => theme.space[1]};
 `;
 
-const Check = styled.span`
-  position: absolute;
-  top: ${({ theme }) => theme.space[2]};
-  right: ${({ theme }) => theme.space[2]};
-  display: grid;
-  place-items: center;
-  width: 1.375rem;
-  height: 1.375rem;
-  border-radius: ${({ theme }) => theme.radius.tag};
-  background: ${({ theme }) => theme.colors.accent};
-  color: ${({ theme }) => theme.colors.accentInk};
-`;
 
+// 버튼 줄: 주요 → 보조를 세로로 쌓고, 가장 약한 길(다른 인물)은 글자 버튼으로 아래 가운데에 둔다
 const Actions = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: ${({ theme }) => theme.space[3]};
   margin-top: ${({ theme }) => theme.space[6]};
 
-  /* 시안의 .row: 버튼을 한 줄에 놓는다. &&는 RoundedButton의 "& + &" 간격 규칙보다 우선하기 위한 것이다. */
-  && > ${RoundedButton} {
-    flex: 1 1 14rem;
-    width: auto;
-    margin: 0;
+  @media ${({ theme }) => theme.mq.phone} {
+    margin-top: ${({ theme }) => theme.space[5]};
   }
 `;
 
-const CheckIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="4"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
+const AltRow = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: ${({ theme }) => theme.space[2]};
+`;
 
 export default function ConfirmCharacterScreen() {
   const navigate = useNavigate();
   const [characterInfo, setCharacterInfo] = useRecoilState(characterInfoState);
   const character = characterInfo[0] || {};
   const { charId, userImg, candidates } = character;
-  const characterName = character.name || '인물이름';
+  // 이름이 없으면 '주인공'으로 부른다
+  const heroName = character.name || '주인공';
+  const title = character.name ? `${character.name}!\n이렇게 생겼군요!` : '주인공이\n이렇게 생겼군요!';
   const [selectedId, setSelectedId] = useState(null);
   const [busy, setBusy] = useState(null);
   const [elapsed, setElapsed] = useState(0);
@@ -181,7 +202,7 @@ export default function ConfirmCharacterScreen() {
     return () => clearInterval(timer);
   }, [busy]);
 
-  // 다시 시도할 수 없는 오류(declined 등)는 카드의 버튼 말고도 Escape나 탭으로 닫고 "다른 인물로 바꿀래요."를 누를 수 있다.
+  // 다시 시도할 수 없는 오류(declined 등)는 카드의 버튼 말고도 Escape나 탭으로 닫고 "다른 인물로 바꿀래요"를 누를 수 있다.
   useEffect(() => {
     if (!failure || failure.error.retryable) return undefined;
     const onKeyDown = (e) => {
@@ -247,35 +268,45 @@ export default function ConfirmCharacterScreen() {
   if (!charId) return <Navigate to="/character-select" replace state={{ flowLost: true }} />;
 
   const count = candidates ? candidates.length : 0;
+  // 후보를 아직 받지 못했다(받는 중이거나 받기에 실패해 다시 시도를 기다린다)
+  const loadingCandidates = !candidates;
   const selected = (candidates || []).find((c) => c.candidateId === selectedId) || null;
 
   return (
     <BaseScreenLayout
-      progressText="3/3"
       progressCurrent={3}
       progressTotal={3}
-      title={`${characterName}!\n이렇게 생겼군요!`}
+      title={title}
       subTitle="사진과 닮았는지 보고 골라 주세요."
+      aside={
+        <Compare>
+          {userImg && (
+            <Frame>
+              <Art $photo src={userImg} alt={`${heroName}의 원본 사진`} />
+              <Caption>원본 사진</Caption>
+            </Frame>
+          )}
+          {selected ? (
+            <Frame>
+              <Art src={selected.imgUrl} alt={`${heroName}의 동화 속 모습`} />
+              <Caption>동화 속 모습</Caption>
+            </Frame>
+          ) : (
+            loadingCandidates && (
+              <Frame aria-busy="true">
+                <ArtSkeleton aria-hidden="true" />
+                <Caption>동화 속 모습</Caption>
+              </Frame>
+            )
+          )}
+        </Compare>
+      }
     >
-      <Compare>
-        {userImg && (
-          <Frame>
-            <Art src={userImg} alt={`${characterName}의 원본 사진`} />
-            <Caption>원본 사진</Caption>
-          </Frame>
-        )}
-        {selected && (
-          <Frame $mirror>
-            <Art src={selected.imgUrl} alt={`${characterName}의 동화 속 모습`} />
-            <Caption>동화 속 모습</Caption>
-          </Frame>
-        )}
-      </Compare>
-
-      {count > 0 && (
+      {/* 후보가 하나면 위의 큰 그림과 같으니 썸네일 줄을 두지 않는다 */}
+      {count > 1 && (
         <>
-          <SectionLabel>후보 중에서 고르기</SectionLabel>
-          <Thumbs>
+          <SectionLabel id="candidate-label">후보 중에서 고르기</SectionLabel>
+          <Thumbs role="group" aria-labelledby="candidate-label">
             {candidates.slice(0, MAX_CANDIDATES).map((c, i) => (
               <Thumb
                 key={c.candidateId}
@@ -283,11 +314,7 @@ export default function ConfirmCharacterScreen() {
                 aria-pressed={c.candidateId === selectedId}
                 onClick={() => setSelectedId(c.candidateId)}
               >
-                {c.candidateId === selectedId && (
-                  <Check>
-                    <CheckIcon />
-                  </Check>
-                )}
+                {c.candidateId === selectedId && <PickCheck />}
                 <ThumbArt src={c.imgUrl} alt="" />
                 <ThumbLabel>{ORDINALS[i]}</ThumbLabel>
               </Thumb>
@@ -303,13 +330,15 @@ export default function ConfirmCharacterScreen() {
         <RoundedButton
           type="button"
           onClick={handleRegenerate}
-          disabled={count >= MAX_CANDIDATES || Boolean(busy)}
+          disabled={loadingCandidates || count >= MAX_CANDIDATES || Boolean(busy)}
         >
           다시 만들기 ({count}/{MAX_CANDIDATES})
         </RoundedButton>
-        <RoundedButton $quiet type="button" onClick={() => navigate('/character-select')}>
-          다른 인물로 바꿀래요.
-        </RoundedButton>
+        <AltRow>
+          <TextButton $soft onClick={() => navigate('/character-select')}>
+            다른 인물로 바꿀래요
+          </TextButton>
+        </AltRow>
       </Actions>
 
       {busy && <WaitingOverlay message={WAITING[busy]} elapsed={elapsed || undefined} />}

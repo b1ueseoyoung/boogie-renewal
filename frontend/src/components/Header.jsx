@@ -1,24 +1,23 @@
 import styled from 'styled-components';
+import { PageHeader } from './PageShell';
 
-const HeaderContainer = styled.header`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.space[4]};
-  min-height: 3.5rem;
-  padding: ${({ theme }) => `${theme.space[3]} ${theme.space[5]}`};
-  background: ${({ theme }) => theme.colors.surface};
-  border-bottom: ${({ theme }) => theme.border.thick};
+// 예전 목록 화면용 호환 래퍼. 흰 띠 대신 PageShell의 PageHeader(큰 굵은 제목)를 바탕 위에 바로 그린다.
+// 새 화면은 <PageShell><PageHeader title=… /></PageShell>을 쓴다(PageShell 안에서는 이 래퍼가 필요 없다).
+// 래퍼는 PageShell과 같은 폭·좌우 여백을 두고, 넓은 화면에서는 위 메뉴 막대 자리를 비운다.
+const Wrap = styled.div`
+  width: min(100%, ${({ theme }) => theme.layout.page});
+  margin-inline: auto;
+  padding: ${({ theme }) => `calc(env(safe-area-inset-top) + ${theme.space[6]}) ${theme.layout.gutter} 0`};
+
+  @media ${({ theme }) => theme.mq.wide} {
+    padding-top: calc(${({ theme }) => theme.layout.navHWide} + ${({ theme }) => theme.space[7]});
+  }
 `;
 
-const Title = styled.h1`
-  font-size: ${({ theme }) => theme.text.xl};
-  color: ${({ theme }) => theme.colors.ink};
-`;
-
-export default function Header({ pageName }) {
+export default function Header({ pageName, subTitle, actions, eyebrow }) {
   return (
-    <HeaderContainer>
-      <Title>{pageName}</Title>
-    </HeaderContainer>
+    <Wrap>
+      <PageHeader title={pageName} subTitle={subTitle} actions={actions} eyebrow={eyebrow} />
+    </Wrap>
   );
 }

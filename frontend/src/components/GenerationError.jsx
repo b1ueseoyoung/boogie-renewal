@@ -2,42 +2,29 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import RoundedButton from './RoundedButton';
+import { Overlay, DialogCard } from './Card';
+import { WarnBadge } from './Notice';
 
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
+// 오류 카드: 막 위의 흰 카드. 위에 옅은 빨강 원 안의 빨간 경고 표시, 아래에 안내 문구와 할 일 버튼 하나
+const Panel = styled(DialogCard)`
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: ${({ theme }) => theme.space[4]};
-  background: ${({ theme }) => theme.colors.scrim};
-  z-index: 100;
+  text-align: center;
 `;
 
-// 시안 C .errorcard: 보조면 위에 빨간펜으로 그은 왼쪽 여백선 하나, 그림자 없음
-const Card = styled.div`
-  width: min(100%, 32rem);
-  padding: ${({ theme }) => `${theme.space[4]} ${theme.space[4]} ${theme.space[4]} ${theme.space[5]}`};
-  background: ${({ theme }) => theme.colors.surface2};
-  border: ${({ theme }) => theme.border.thick};
-  border-left: 0.375rem solid ${({ theme }) => theme.colors.redpen};
-  border-radius: ${({ theme }) => theme.radius.card};
-`;
-
-const Head = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.space[3]};
-  align-items: flex-start;
-
-  & svg {
-    flex: none;
-    margin-top: 0.15rem;
-    color: ${({ theme }) => theme.colors.redpen};
-  }
+const Badge = styled(WarnBadge)`
+  margin-bottom: ${({ theme }) => theme.space[4]};
 `;
 
 const Text = styled.p`
-  font-size: ${({ theme }) => theme.text.base};
+  font-family: ${({ theme }) => theme.fonts.display};
+  font-size: ${({ theme }) => theme.text.lg};
+  font-weight: ${({ theme }) => theme.weight.semibold};
+  line-height: 1.5;
+  letter-spacing: ${({ theme }) => theme.tracking.body};
+  color: ${({ theme }) => theme.colors.ink};
+  text-wrap: balance;
 `;
 
 const Nowrap = styled.span`
@@ -45,26 +32,10 @@ const Nowrap = styled.span`
 `;
 
 const Action = styled(RoundedButton)`
-  margin-top: ${({ theme }) => theme.space[4]};
+  &&& {
+    margin-top: ${({ theme }) => theme.space[6]};
+  }
 `;
-
-const WarnIcon = () => (
-  <svg
-    width="26"
-    height="26"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.4"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
-    <path d="M12 9v4" />
-    <path d="M12 17h.01" />
-  </svg>
-);
 
 const MESSAGES = {
   declined: '이 사진으로는 그림을 만들 수 없어요. 다른 사진으로 다시 해 볼까요?',
@@ -142,22 +113,20 @@ export default function GenerationError({ error, onRetry, onClose, scene = false
 
   return (
     <Overlay role="alert">
-      <Card>
-        <Head>
-          <WarnIcon />
-          <Text>{messageFor(error, scene)}</Text>
-        </Head>
+      <Panel $maxWidth="24rem">
+        <Badge />
+        <Text>{messageFor(error, scene)}</Text>
         {retryable && (
-          <Action ref={buttonRef} type="button" onClick={onRetry}>
+          <Action ref={buttonRef} type="button" $primary onClick={onRetry}>
             다시 시도
           </Action>
         )}
         {action && (action.to || onClose) && (
-          <Action ref={buttonRef} type="button" onClick={handleAction}>
+          <Action ref={buttonRef} type="button" $primary onClick={handleAction}>
             {action.label}
           </Action>
         )}
-      </Card>
+      </Panel>
     </Overlay>
   );
 }

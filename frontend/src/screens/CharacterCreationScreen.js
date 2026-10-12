@@ -4,32 +4,19 @@ import { useRecoilState } from 'recoil';
 import { characterInfoState } from '../recoil/atoms';
 import { useNavigate } from 'react-router-dom';
 import BaseScreenLayout from '../components/BaseScreenLayout';
+import { NoteBox } from '../components/Card';
 import GallerySelectButton from '../components/GallerySelectButton';
 import GenerationError from '../components/GenerationError';
 import WaitingOverlay from '../components/WaitingOverlay';
 import { uploadPhoto } from '../api/files';
 
-const Consent = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.space[3]};
-  align-items: flex-start;
-  padding: ${({ theme }) => `${theme.space[3]} ${theme.space[4]}`};
-  background: ${({ theme }) => theme.colors.accentPale};
-  border-radius: ${({ theme }) => theme.radius.card};
+// 사진 안내 상자: 공통 NoteBox(옅은 파랑, 테두리 없음, 방패 아이콘은 accentDeep). 캐릭터 고르기 화면의 안내와 같은 모양
+const Consent = styled(NoteBox)`
   font-size: ${({ theme }) => theme.text.sm};
-  color: ${({ theme }) => theme.colors.ink};
-
-  & svg {
-    flex: none;
-    margin-top: 0.15rem;
-    color: ${({ theme }) => theme.colors.accent};
-  }
 `;
 
 const ShieldIcon = () => (
   <svg
-    width="22"
-    height="22"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -93,22 +80,22 @@ const CharacterCreationScreen = () => {
 
   return (
     <BaseScreenLayout
-      progressText="1/3"
       progressCurrent={1}
       progressTotal={3}
       title={`주인공은 어떻게\n생겼나요?`}
+      subTitle="주인공이 될 인물의 사진을 업로드해 주세요."
       aside={<GallerySelectButton onClick={handleSelectImage} isFinished={isFinished} />}
     >
-      <Consent>
+      <Consent $icon>
         <ShieldIcon />
-        <p>주인공이 될 인물의 사진을 업로드 해주세요. 사진은 그림을 만들기 위해 OpenAI로 전송돼요. 본인이나 보호자가 동의한 사진만 올려 주세요.</p>
+        <p>사진은 그림을 만들기 위해 OpenAI로 전송돼요. 본인이나 보호자가 동의한 사진만 올려 주세요.</p>
       </Consent>
 
       <input
         type="file"
         accept="image/*"
         ref={fileInputRef}
-        style={{ display: 'none' }}
+        hidden
         onChange={handleFileChange}
       />
 

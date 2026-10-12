@@ -1,13 +1,33 @@
 import React from 'react';
-import { useTheme } from 'styled-components';
+import styled from 'styled-components';
 import { useRecoilValue } from 'recoil';
 import { storyInfoState } from '../recoil/atoms';
 import { useNavigate } from 'react-router-dom';
-import BaseScreenLayout from '../components/BaseScreenLayout';
+import BaseScreenLayout, { SunDisc } from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
+import { UNTITLED } from '../components/Placeholder';
+import finishImg from '../assets/images/finish.png';
+
+// 첫 그림이 없을 때 그림 자리에 두는, 두 팔을 든 도깨비
+const Cheer = styled(SunDisc)`
+  width: clamp(8rem, 6rem + 6vw, 12rem);
+  margin: 0 auto;
+`;
+
+// 완성된 책 이름
+const BookTitle = styled.h2`
+  font-size: ${({ theme }) => theme.text['2xl']};
+  color: ${({ theme }) => theme.colors.ink};
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+`;
+
+// 주요(바로 읽기) → 보조(책장) 버튼
+const Actions = styled.div`
+  margin-top: ${({ theme }) => theme.space[6]};
+`;
 
 const ResultScreen = () => {
-  const theme = useTheme();
   const navigate = useNavigate();
   const storyInfo = useRecoilValue(storyInfoState);
   const firstImage = storyInfo.img && storyInfo.img.length > 0
@@ -26,25 +46,28 @@ const ResultScreen = () => {
 
   return (
     <BaseScreenLayout
-      progressText=""
-      title="짜잔 이야기가 완성됐어요!"
-      subTitle="만들어진 이야기는 내 책장에 저장될 거에요."
-      imageSrc={firstImage}
-      imageAlt="썸네일"
+      title="짜잔, 이야기가 완성됐어요!"
+      subTitle="만들어진 이야기는 내 책장에 저장될 거예요."
+      imageSrc={firstImage || undefined}
+      imageAlt="완성된 동화의 첫 장면"
+      aside={
+        firstImage ? undefined : (
+          <Cheer $fill="78%" aria-hidden="true">
+            <img src={finishImg} alt="" />
+          </Cheer>
+        )
+      }
     >
+      <BookTitle>{storyInfo.title || UNTITLED}</BookTitle>
 
-      <div style={{ color: theme.colors.ink, marginBottom: '20px' }}>
-        [{storyInfo.title || '이야기제목10자이내?'}]
-      </div>
-
-      {/* 버튼 2개 (RoundedButton 재사용) */}
-      <RoundedButton onClick={handleReadNow}>
-        바로 읽어보기
-      </RoundedButton>
-
-      <RoundedButton onClick={handleGoToStorage}>
-        내 책장으로 가기
-      </RoundedButton>
+      <Actions>
+        <RoundedButton type="button" $primary onClick={handleReadNow}>
+          바로 읽어보기
+        </RoundedButton>
+        <RoundedButton type="button" onClick={handleGoToStorage}>
+          내 책장으로 가기
+        </RoundedButton>
+      </Actions>
     </BaseScreenLayout>
   );
 };

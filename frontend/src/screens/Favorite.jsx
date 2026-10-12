@@ -1,60 +1,20 @@
 import React, { useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import { storyInfoState, favoriteStoryIdsState } from '../recoil/atoms';
-import Header from '../components/Header';
-import BottomNav from '../components/BottomNav';
+import PageShell, { PageHeader, ShelfGrid } from '../components/PageShell';
 import Block from '../components/Block';
+import Dialog from '../components/Dialog';
 import Empty from '../components/Empty';
-import PopCard from '../components/PopCard';
+import RoundedButton from '../components/RoundedButton';
+import { CoverPlate, UNTITLED } from '../components/Placeholder';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import defaultImg from '../assets/images/testImg.png';
 
-const FavoriteContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: ${({ theme }) => theme.colors.surface};
-  min-height: 100vh;
-`;
-
-const ContentContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  padding: 0.875rem 1rem 1.5rem 0.875rem;
-  gap: 1rem;
-  width: 100%;
-`;
-
-const StoryWrapper = styled.div`
-  position: relative;
-  flex: 1 1 calc(50% - 1rem);
-
-  @media (min-width: 480px) {
-    flex: 1 1 calc(33.33% - 1rem);
-  }
-
-  @media (min-width: 768px) {
-    flex: 1 1 calc(25% - 1rem);
-  }
-
-  @media (min-width: 1024px) {
-    flex: 1 1 calc(20% - 1rem);
-  }
-`;
-
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(28, 28, 28, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+// 날짜: 흰 대화상자 위라 inkMuted(4.62:1). 줄거리(inkSoft)와 나뉘게 medium
+const DialogDate = styled.p`
+  color: ${({ theme }) => theme.colors.inkMuted};
+  font-size: ${({ theme }) => theme.text.sm};
+  font-weight: ${({ theme }) => theme.weight.medium};
 `;
 
 const formatDate = (dateStr) => {
@@ -79,52 +39,69 @@ export default function Favorite() {
   const handleBlockClick = (story) => setSelectedStory(story);
   const handleClosePopup = () => setSelectedStory(null);
 
-  return (
-    <FavoriteContainer>
-      {favoriteStories.length > 0 && <Header pageName="즐겨찾기" />}
-      <ContentContainer>
-        {favoriteStories.length > 0 ? (
-          favoriteStories.map((story) => (
-            <StoryWrapper key={story.storyId} onClick={() => handleBlockClick(story)}>
-              <Block
-                blockImg={story.coverImg || defaultImg}
-                blockName={story.title}
-                creationDate={formatDate(story.creationDate)}
-                storyId={story.storyId}
-                showFavorite={true}
-              />
-            </StoryWrapper>
-          ))
-        ) : (
-          <Empty
-            title="즐겨찾기한 동화가 없어요"
-            description="마음에 드는 동화를 별표로 저장해보세요!"
-            buttonText="책장으로 돌아가기"
-            onButtonClick={() => navigate('/bookshelf')} 
-          />
-        )}
-      </ContentContainer>
+  const selectedDate = selectedStory ? formatDate(selectedStory.creationDate) : '';
 
-      {selectedStory && (
-        <Overlay onClick={handleClosePopup}>
-          <PopCard
-            imageSrc={selectedStory.coverImg || defaultImg}
-            cardTitle={selectedStory.title}
-            subTitle={formatDate(selectedStory.creationDate)}
-            description={selectedStory.summary}
-            positiveBtnText="열기"
-            negativeBtnText="닫기"
-            onPositiveClick={() => {
-              handleClosePopup();
-              navigate(`/reading?file=${encodeURIComponent(selectedStory.content)}`);
-            }}
-            onNegativeClick={handleClosePopup}
-            titleFontSize="1.1rem"
-          />
-        </Overlay>
+  return (
+    <PageShell>
+      {/* 제목은 즐겨찾기가 없어도 늘 보인다 */}
+      <PageHeader title="즐겨찾기" />
+
+      {favoriteStories.length > 0 ? (
+        <ShelfGrid>
+          {favoriteStories.map((story) => (
+            <Block
+              key={story.storyId}
+              blockImg={story.coverImg}
+              blockName={story.title || UNTITLED}
+              creationDate={formatDate(story.creationDate)}
+              storyId={story.storyId}
+              showFavorite={true}
+              onClick={() => handleBlockClick(story)}
+            />
+          ))}
+        </ShelfGrid>
+      ) : (
+        <Empty
+          title="즐겨찾기한 동화가 없어요"
+          description="마음에 드는 동화를 별표로 저장해보세요!"
+          buttonText="책장으로 돌아가기"
+          onButtonClick={() => navigate('/bookshelf')}
+        />
       )}
 
-      <BottomNav />
-    </FavoriteContainer>
+      {/* 책 열기: 책장 화면과 같은 대화상자(표지 → 제목 → 날짜·줄거리 → 열기·닫기) */}
+      {selectedStory && (
+        <Dialog
+          open
+          onClose={handleClosePopup}
+          title={selectedStory.title || UNTITLED}
+          media={<CoverPlate src={selectedStory.coverImg} />}
+          actions={
+            <>
+              <RoundedButton
+                type="button"
+                $primary
+                onClick={() => {
+                  handleClosePopup();
+                  navigate(`/reading?file=${encodeURIComponent(selectedStory.content)}`);
+                }}
+              >
+                열기
+              </RoundedButton>
+              <RoundedButton type="button" onClick={handleClosePopup}>
+                닫기
+              </RoundedButton>
+            </>
+          }
+        >
+          {(selectedDate || selectedStory.summary) && (
+            <>
+              {selectedDate && <DialogDate>{selectedDate}</DialogDate>}
+              {selectedStory.summary && <p>{selectedStory.summary}</p>}
+            </>
+          )}
+        </Dialog>
+      )}
+    </PageShell>
   );
 }

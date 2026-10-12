@@ -3,28 +3,27 @@ import { useRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { characterInfoState } from '../recoil/atoms';
-import BaseScreenLayout from '../components/BaseScreenLayout';
+import BaseScreenLayout, { PaperFrame } from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
+import FormField, { FormStack } from '../components/FormField';
 import WaitingOverlay from '../components/WaitingOverlay';
 import GenerationError from '../components/GenerationError';
 import { postCharacter } from '../api/character';
 import { speak, stopSpeaking } from '../utils/speak';
 import silhouetteImg from '../assets/images/silhouette.png';
 
-const NameInput = styled.input`
+// 앞 단계에서 올린 사진. 좁은 화면에서는 정사각형으로 잘라 입력 칸이 첫 화면 안에 들어오게 한다
+const Photo = styled.img`
   display: block;
   width: 100%;
-  min-height: ${({ theme }) => theme.tap};
-  margin-bottom: ${({ theme }) => theme.space[4]};
-  padding: ${({ theme }) => `${theme.space[2]} ${theme.space[4]}`};
-  font-family: ${({ theme }) => theme.fonts.body};
-  font-size: ${({ theme }) => theme.text.lg};
-  background: ${({ theme }) => theme.colors.surface};
-  border: ${({ theme }) => theme.border.thick};
-  border-radius: ${({ theme }) => theme.radius.btn};
+  aspect-ratio: 1;
+  object-fit: cover;
+  object-position: center 30%;
+  border-radius: ${({ theme }) => theme.radius.art};
+  background: ${({ theme }) => theme.colors.surface2};
 
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.inkSoft};
+  @media ${({ theme }) => theme.mq.wide} {
+    aspect-ratio: 3 / 4;
   }
 `;
 
@@ -34,6 +33,7 @@ export default function CharacterQuestionScreen() {
   const navigate = useNavigate();
   const [characterInfo, setCharacterInfo] = useRecoilState(characterInfoState);
   const [name, setName] = useState(characterInfo[0]?.name || '');
+  const userImg = characterInfo[0]?.userImg;
   const [busy, setBusy] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState(null);
@@ -100,17 +100,25 @@ export default function CharacterQuestionScreen() {
 
   return (
     <BaseScreenLayout
-      progressText="2/3"
       progressCurrent={2}
       progressTotal={3}
       title={`주인공의 이름이\n무엇인가요?`}
       subTitle="이름을 입력하고 다음으로 넘어가세요."
+      aside={
+        userImg ? (
+          <PaperFrame>
+            <Photo src={userImg} alt="올린 주인공 사진" />
+          </PaperFrame>
+        ) : undefined
+      }
       imageSrc={silhouetteImg}
       imageAlt="주인공 실루엣"
-      imageFill="inkSoft"
+      imageFill="pencil"
     >
-      <form onSubmit={handleSubmit}>
-        <NameInput
+      <FormStack onSubmit={handleSubmit}>
+        <FormField
+          id="character-name"
+          label="주인공 이름"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -118,10 +126,11 @@ export default function CharacterQuestionScreen() {
           aria-label="주인공 이름"
           autoComplete="off"
         />
-        <RoundedButton $primary type="submit" disabled={busy}>
+        {/* 이름이 비면 눌러도 넘어가지 않으므로 비활성으로 보인다 */}
+        <RoundedButton $primary type="submit" disabled={busy || !name.trim()}>
           확인
         </RoundedButton>
-      </form>
+      </FormStack>
 
       {busy && <WaitingOverlay message="도깨비가 주인공을 그리고 있어요" elapsed={elapsed || undefined} />}
 

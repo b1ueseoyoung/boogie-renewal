@@ -3,7 +3,9 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import styled from 'styled-components';
 import { storyCreationState, characterInfoState, coverImageState } from '../recoil/atoms';
-import BaseScreenLayout from '../components/BaseScreenLayout';
+import BaseScreenLayout, { rise } from '../components/BaseScreenLayout';
+import ChoiceButton from '../components/ChoiceButton';
+import { Mascot } from '../components/FormField';
 import WaitingOverlay from '../components/WaitingOverlay';
 import GenerationError from '../components/GenerationError';
 import { speak, stopSpeaking } from '../utils/speak';
@@ -38,32 +40,32 @@ const storyQuestions = [
   { key: 'place', question: '장소를 선택해 주세요.', options: ['우주', '왕국', '산', '바다', '학교', '집'] },
 ];
 
+const MAX_OPTIONS = Math.max(...storyQuestions.map((q) => q.options.length));
+
+// 선택지 카드 격자. 질문이 바뀌면(key) 카드가 70ms씩 차례로 떠오른다
 const Options = styled.div`
   display: grid;
   gap: ${({ theme }) => theme.space[3]};
   grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
   margin-top: ${({ theme }) => theme.space[3]};
 
-  @media (max-width: 30rem) {
-    grid-template-columns: repeat(2, 1fr);
+  & > * {
+    animation: ${rise} ${({ theme }) => `${theme.motion.enter} ${theme.motion.out}`} backwards;
   }
-`;
 
-const Option = styled.button`
-  min-height: ${({ theme }) => theme.tap};
-  padding: ${({ theme }) => `${theme.space[4]} ${theme.space[4]}`};
-  font-family: ${({ theme }) => theme.fonts.display};
-  font-size: ${({ theme }) => theme.text.lg};
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.ink};
-  background: ${({ theme }) => theme.colors.surface};
-  border: ${({ theme }) => theme.border.rule};
-  border-radius: ${({ theme }) => theme.radius.card};
-  cursor: pointer;
-  transition: background-color ${({ theme }) => `${theme.motion.base} ${theme.motion.ease}`};
+  ${({ theme }) =>
+    Array.from(
+      { length: MAX_OPTIONS },
+      (_, i) => `& > :nth-child(${i + 1}) { animation-delay: calc(120ms + ${i} * ${theme.motion.stagger}); }`
+    ).join('\n')}
 
-  &:hover {
-    background: ${({ theme }) => theme.colors.accentPale};
+  /* 휴대폰은 두 칸. 개수가 홀수면 마지막 카드를 한 줄 전체로 둔다 */
+  @media ${({ theme }) => theme.mq.phone} {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    & > :last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
   }
 `;
 
@@ -180,7 +182,6 @@ export default function StoryQuestionScreen() {
 
   return (
     <BaseScreenLayout
-      progressText={`${questionIndex + 1} / ${storyQuestions.length}`}
       progressCurrent={questionIndex + 1}
       progressTotal={storyQuestions.length}
       title={
@@ -195,12 +196,11 @@ export default function StoryQuestionScreen() {
         )
       }
       subTitle="이야기에 대해 말해 주세요."
+      aside={<Mascot />}
     >
-      <Options>
+      <Options key={current.key}>
         {current.options.map((opt) => (
-          <Option key={opt} type="button" onClick={() => handleSelect(opt)}>
-            {opt}
-          </Option>
+          <ChoiceButton key={opt} text={opt} onClick={() => handleSelect(opt)} />
         ))}
       </Options>
 
