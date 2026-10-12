@@ -25,8 +25,8 @@ import CharacterStore from './screens/CharacterStore';
 import EditBookshelf from './screens/EditBookshelf.jsx';
 import ParentReportScreen from './screens/ParentReportScreen.jsx';
 import SelectExistingCharacterScreen from './screens/SelectExistingCharacterScreen.jsx';
-// 하단 고정 바
-import BottomNav from './components/BottomNav';
+// 주요 메뉴 막대 (휴대폰 아래, 넓은 화면 위)
+import BottomNav, { isNavRoute } from './components/BottomNav';
 
 // ToastContainer 전역 등록
 import { ToastContainer } from 'react-toastify';
@@ -54,7 +54,8 @@ function PrivateRoute() {
     };
   }, [user, setUser]);
 
-  if (!checked) return null;
+  // setUser가 effect를 다시 돌려 cancelled가 되면 finally의 setChecked가 건너뛰어지므로, user가 있으면 확인이 끝난 것으로 본다
+  if (!user && !checked) return null;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   return <Outlet />;
 }
@@ -75,15 +76,9 @@ function App() {
 
   const location = useLocation();
 
-  // 네비게이션 바 표시 여부를 결정
-  // 네비바가 뜨길 원하면 아래처럼 작성
-  const showNav =
-    location.pathname === '/' ||
-    location.pathname === '/book-storage' ||
-    location.pathname === '/settings' ||
-    location.pathname === '/favorites' ||
-    location.pathname === '/character-storage';
-  
+  // 메뉴 막대는 메뉴 항목의 화면(내 캐릭터, 내 책장, 홈, 즐겨찾기, 더보기)에서만 보인다. 경로 목록은 BottomNav의 navItems 하나뿐이다
+  const showNav = isNavRoute(location.pathname);
+
   return (
     <ThemeProvider theme={theme}>
     <GlobalStyle/>
@@ -124,7 +119,7 @@ function App() {
         </Route>
       </Routes>
 
-      {/* 모든 페이지에서 하단 고정 바 표시 */}
+      {/* 메뉴 막대는 여기 한 곳에서만 그린다 */}
       {showNav && <BottomNav />}
     </RecoilRoot>
     </ThemeProvider>

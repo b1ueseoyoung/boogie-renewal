@@ -1,75 +1,128 @@
 import styled, { keyframes } from 'styled-components';
+import { Overlay, DialogCard } from './Card';
+import { SunDisc } from './BaseScreenLayout';
+import dokkaebiWave from '../assets/images/dokkaebi_loading1.png';
+import dokkaebiSmile from '../assets/images/dokkaebi_loading2.png';
 
-const turn = keyframes`
-  to {
-    transform: rotate(360deg);
+// 기다리는 동안: 옅은 파랑 원 위에서 방망이를 흔드는 도깨비(그림 두 장을 번갈아), 문구, 통통 뛰는 파란 점 세 개, 지난 시간.
+// 움직임을 줄이는 설정이면 웃는 도깨비 한 장만 멈춰 있고 점도 뛰지 않는다.
+
+// 그림 두 장이 같은 자리에서 번갈아 보인다: 한 장은 앞 반, 다른 한 장은 뒤 반(반 주기 늦게 시작)에만 보인다.
+// 투명 바탕 그림이라 한 장이 보일 때 다른 한 장은 완전히 숨겨야 겹쳐 보이지 않는다
+const flip = keyframes`
+  0% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
   }
 `;
 
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: ${({ theme }) => theme.space[4]};
-  background: ${({ theme }) => theme.colors.scrim};
-  z-index: 100;
+const hop = keyframes`
+  0%, 60%, 100% {
+    translate: 0 0;
+    opacity: 0.35;
+  }
+  30% {
+    translate: 0 -0.375rem;
+    opacity: 1;
+  }
 `;
 
-const Box = styled.div`
+const Panel = styled(DialogCard)`
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  gap: ${({ theme }) => theme.space[3]};
-  width: min(100%, 32rem);
-  padding: ${({ theme }) => theme.space[5]};
-  background: ${({ theme }) => theme.colors.accentPale};
-  border: ${({ theme }) => theme.border.thick};
-  border-radius: ${({ theme }) => theme.radius.card};
+  text-align: center;
 `;
 
-const Spinner = styled.svg`
-  width: 2rem;
-  height: 2rem;
-  flex: none;
-  animation: ${turn} 1.4s linear infinite;
+const Art = styled(SunDisc)`
+  margin-bottom: ${({ theme }) => theme.space[5]};
 
-  & circle {
-    stroke: ${({ theme }) => theme.colors.accentTrack};
+  & > img {
+    animation: ${flip} 1.2s steps(1, end) infinite;
   }
 
-  & path {
-    stroke: ${({ theme }) => theme.colors.accent};
+  & > img:last-child {
+    animation-delay: -0.6s;
+  }
+
+  /* 움직임을 줄이면 웃는 도깨비 한 장만 보인다 */
+  @media (prefers-reduced-motion: reduce) {
+    & > img {
+      animation: none;
+    }
+
+    & > img:first-child {
+      visibility: hidden;
+    }
   }
 `;
 
 const Text = styled.p`
   font-family: ${({ theme }) => theme.fonts.display};
-  font-size: ${({ theme }) => theme.text.lg};
-  font-weight: 600;
+  font-size: ${({ theme }) => theme.text.xl};
+  font-weight: ${({ theme }) => theme.weight.semibold};
+  line-height: ${({ theme }) => theme.leading.tight};
+  letter-spacing: ${({ theme }) => theme.tracking.tight};
+  color: ${({ theme }) => theme.colors.ink};
+  text-wrap: balance;
+`;
+
+const Dots = styled.span`
+  display: inline-flex;
+  gap: ${({ theme }) => theme.space[2]};
+  margin-top: ${({ theme }) => theme.space[4]};
+
+  & > span {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    background: ${({ theme }) => theme.colors.accent};
+    opacity: 0.35;
+    animation: ${hop} 1.2s ${({ theme }) => theme.motion.ease} infinite;
+  }
+
+  & > span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  & > span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    & > span {
+      animation: none;
+      opacity: 1;
+    }
+  }
 `;
 
 const Clock = styled.p`
+  margin-top: ${({ theme }) => theme.space[3]};
   font-size: ${({ theme }) => theme.text.sm};
-  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: ${({ theme }) => theme.colors.inkSoft};
+  color: ${({ theme }) => theme.colors.inkMuted};
 `;
 
 export default function WaitingOverlay({ message, elapsed }) {
   return (
     <Overlay role="status" aria-live="polite" aria-busy="true">
-      <Box>
-        <Spinner viewBox="0 0 48 48" aria-hidden="true">
-          <circle cx="24" cy="24" r="19" fill="none" strokeWidth="6" />
-          <path d="M24 5a19 19 0 0 1 19 19" fill="none" strokeWidth="6" strokeLinecap="round" />
-        </Spinner>
-        <div>
-          <Text>{message}</Text>
-          {typeof elapsed === 'number' && <Clock>{elapsed}초 지났어요</Clock>}
-        </div>
-      </Box>
+      <Panel $maxWidth="22rem" $pad="lg">
+        <Art $size="9rem" $fill="78%" aria-hidden="true">
+          <img src={dokkaebiWave} alt="" />
+          <img src={dokkaebiSmile} alt="" />
+        </Art>
+        <Text>{message}</Text>
+        <Dots aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </Dots>
+        {typeof elapsed === 'number' && <Clock>{elapsed}초 지났어요</Clock>}
+      </Panel>
     </Overlay>
   );
 }

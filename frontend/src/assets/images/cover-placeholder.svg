@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <!-- 표지·그림이 없을 때의 대체 그림. 색은 theme.js 값과 같다: surface2, accentPale, accentTrack, surface, line, accent, sun(작은 별 하나). 책 테두리만 옅은 파랑(#9BB0FF) -->
+  <rect width="300" height="400" fill="#F2F4F6"/>
+  <circle cx="150" cy="178" r="104" fill="#EAF0FF"/>
+  <g fill="#D6E0FF">
+    <path transform="translate(78 92) scale(1.1)" d="M0.0 -10.0 L2.6 -3.6 L9.5 -3.1 L4.2 1.4 L5.9 8.1 L0.0 4.4 L-5.9 8.1 L-4.2 1.4 L-9.5 -3.1 L-2.6 -3.6Z"/>
+    <path transform="translate(236 262) scale(0.6)" d="M0.0 -10.0 L2.6 -3.6 L9.5 -3.1 L4.2 1.4 L5.9 8.1 L0.0 4.4 L-5.9 8.1 L-4.2 1.4 L-9.5 -3.1 L-2.6 -3.6Z"/>
+    <circle cx="64" cy="250" r="4"/>
+    <circle cx="190" cy="74" r="3"/>
+  </g>
+  <path fill="#FFB020" transform="translate(226 118) scale(0.8)" d="M0.0 -10.0 L2.6 -3.6 L9.5 -3.1 L4.2 1.4 L5.9 8.1 L0.0 4.4 L-5.9 8.1 L-4.2 1.4 L-9.5 -3.1 L-2.6 -3.6Z"/>
+  <!-- 펼친 책 -->
+  <g transform="translate(150 196)" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M0 -4 C-20 -20 -52 -24 -78 -14 L-78 50 C-52 40 -20 42 0 58 Z" fill="#FFFFFF" stroke="#9BB0FF" stroke-width="3"/>
+    <path d="M0 -4 C20 -20 52 -24 78 -14 L78 50 C52 40 20 42 0 58 Z" fill="#FFFFFF" stroke="#9BB0FF" stroke-width="3"/>
+    <g fill="none" stroke="#E5E8EB" stroke-width="3.5">
+      <path d="M-62 6 C-46 0 -28 0 -14 6"/>
+      <path d="M-62 20 C-46 14 -28 14 -14 20"/>
+      <path d="M-62 34 C-46 28 -28 28 -14 34"/>
+      <path d="M14 6 C28 0 46 0 62 6"/>
+      <path d="M14 20 C28 14 46 14 62 20"/>
+    </g>
+    <path d="M44 -19 L44 6 L52 0 L60 6 L60 -21" fill="#2F5BFF" stroke="none"/>
+  </g>
+</svg>

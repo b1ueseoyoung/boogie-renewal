@@ -3,123 +3,129 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import styled from 'styled-components';
 import { storyCreationState, isStoryGeneratedState } from '../recoil/atoms';
-import BaseScreenLayout, { rise } from '../components/BaseScreenLayout';
+import BaseScreenLayout, { rise, SunDisc } from '../components/BaseScreenLayout';
+import ChoiceButton from '../components/ChoiceButton';
+import RoundedButton from '../components/RoundedButton';
 import WaitingOverlay from '../components/WaitingOverlay';
 import GenerationError from '../components/GenerationError';
 import { postStoryNext } from '../api/story';
 import { speak, stopSpeaking } from '../utils/speak';
+import dokkaebiAsk from '../assets/images/dokkaebi_where.png';
 
 const TOTAL_STEPS = 5;
 
-// 장면이 바뀌면(key=step) 그림과 글이 다시 떠오른다. 카드 없이 바탕 위에 펼친 그림책처럼 둔다
-const Scene = styled.div`
+// 장면 삽화의 가로:세로(생성 그림 1106×1422)
+const ART_RATIO = '7 / 9';
+
+// 펼친 그림책 한 권: 넓으면 그림 쪽(왼쪽) | 글 쪽(오른쪽), 좁으면 그림 → 글로 쌓은 한 쪽.
+// 장면이 바뀌면(key=step) 책이 다시 떠오른다. 움직임을 줄이는 설정이면 전역 규칙이 움직임을 끈다.
+// 흰 카드처럼 그림자 없이 바깥 1px line으로 바탕과 나눈다(테두리 대신 선을 그려 크기는 그대로다)
+const Book = styled.article`
   display: grid;
-  gap: ${({ theme }) => theme.space[5]};
-  align-items: center;
   grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  border-radius: ${({ theme }) => theme.radius.card};
+  background: ${({ theme }) => theme.colors.surface};
+  box-shadow: ${({ theme }) => theme.shadow.ring};
   animation: ${rise} ${({ theme }) => `${theme.motion.enter} ${theme.motion.out}`};
 
-  @media (min-width: 52.0625rem) {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  @media ${({ theme }) => theme.mq.wide} {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
   }
 `;
 
+// 그림 쪽: 옅은 회색 면(surface2) 위에 삽화를 둔다
+const ArtPage = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: ${({ theme }) => theme.space[4]};
+  background: ${({ theme }) => theme.colors.surface2};
+
+  @media ${({ theme }) => theme.mq.wide} {
+    padding: ${({ theme }) => theme.space[6]};
+  }
+`;
+
+// 비율을 지킨 채 화면 높이에 맞춘다. 좁은 화면은 첫 화면에 글이 조금 보이도록 더 작게 둔다
 const Art = styled.img`
   display: block;
-  width: 100%;
-  /* 선택지까지 한 화면에 들어오도록 화면 높이에 맞춘다 */
-  max-width: min(34rem, 52vh);
-  margin: 0 auto;
-  aspect-ratio: 1 / 1;
-
-  @media (max-width: 52rem) {
-    max-width: min(100%, 34vh);
-  }
+  width: min(100%, calc(var(--vh, 1vh) * 38 * 7 / 9));
+  height: auto;
+  aspect-ratio: ${ART_RATIO};
   object-fit: cover;
-  border-radius: ${({ theme }) => theme.radius.card};
-  background: ${({ theme }) => theme.colors.surface2};
-  box-shadow: ${({ theme }) => theme.shadow.art};
+  border-radius: ${({ theme }) => theme.radius.art};
+  background: ${({ theme }) => theme.colors.surface};
+
+  @media ${({ theme }) => theme.mq.wide} {
+    width: min(100%, calc((var(--vh, 1vh) * 100 - 14rem) * 7 / 9));
+  }
 `;
 
-const Words = styled.div`
+// 글 쪽: 이야기 글 → 도깨비의 질문 → 선택지. 넓으면 가운데 접힌 곳(왼쪽 가장자리)에 옅은 그늘
+const WordsPage = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: ${({ theme }) => theme.space[5]};
   min-width: 0;
+  padding: ${({ theme }) => `${theme.space[5]} ${theme.space[5]} ${theme.space[6]}`};
+
+  @media ${({ theme }) => theme.mq.wide} {
+    padding: ${({ theme }) => theme.space[7]};
+    box-shadow: ${({ theme }) => theme.shadow.gutter};
+  }
 `;
 
 const StoryText = styled.p`
+  max-width: 34em;
   font-size: ${({ theme }) => theme.text.story};
-  line-height: 1.85;
+  line-height: ${({ theme }) => theme.leading.body};
 `;
 
-// 도깨비의 말풍선: 꼬리가 왼쪽 위를 가리킨다
+// 도깨비가 묻는다: 회색 원 안의 도깨비 + 옅은 파랑 말풍선(꼬리가 도깨비를 가리킨다)
+const Ask = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: ${({ theme }) => theme.space[3]};
+`;
+
+// 원은 surface2: 옆 말풍선(accentPale)과 같은 색이면 꼬리 끝에서 두 면이 붙어 보인다
+const Asker = styled(SunDisc)`
+  margin-top: ${({ theme }) => theme.space[1]};
+  background: ${({ theme }) => theme.colors.surface2};
+`;
+
+// 질문 말풍선: accentPale 바탕 + ink bold(14.5:1)
 const Question = styled.h1`
   position: relative;
-  margin-top: ${({ theme }) => theme.space[5]};
+  flex: 1 1 auto;
+  min-width: 0;
   padding: ${({ theme }) => `${theme.space[3]} ${theme.space[5]}`};
   font-size: ${({ theme }) => theme.text.xl};
+  font-weight: ${({ theme }) => theme.weight.bold};
   line-height: 1.4;
-  background: ${({ theme }) => theme.colors.sunPale};
+  letter-spacing: ${({ theme }) => theme.tracking.tight};
+  color: ${({ theme }) => theme.colors.ink};
+  background: ${({ theme }) => theme.colors.accentPale};
   border-radius: ${({ theme }) => theme.radius.card};
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
 
   &::before {
     content: '';
     position: absolute;
-    top: -0.625rem;
-    left: 2rem;
-    border: 0.625rem solid transparent;
-    border-top: 0;
-    border-bottom-color: ${({ theme }) => theme.colors.sunPale};
+    top: 1.125rem;
+    left: -0.5rem;
+    border: 0.5rem solid transparent;
+    border-left: 0;
+    border-right-color: ${({ theme }) => theme.colors.accentPale};
   }
 `;
 
 const Choices = styled.div`
   display: grid;
-  gap: ${({ theme }) => theme.space[4]};
-  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
-  margin-top: ${({ theme }) => theme.space[5]};
-`;
-
-const Choice = styled.button`
-  display: flex;
   gap: ${({ theme }) => theme.space[3]};
-  align-items: center;
-  min-height: 3.5rem;
-  margin-bottom: 0.25rem; /* 바닥 턱 자리 */
-  padding: ${({ theme }) => `${theme.space[3]} ${theme.space[5]} ${theme.space[3]} ${theme.space[3]}`};
-  font-family: ${({ theme }) => theme.fonts.display};
-  font-size: ${({ theme }) => theme.text.lg};
-  line-height: 1.35;
-  text-align: left;
-  color: ${({ theme }) => theme.colors.ink};
-  background: ${({ theme }) => theme.colors.surface};
-  border: ${({ theme }) => theme.border.thick};
-  border-radius: ${({ theme }) => theme.radius.card};
-  box-shadow: ${({ theme }) => theme.shadow.ledgeSoft};
-  cursor: pointer;
-  /* 선택지가 하나씩 차례로 나타난다 */
-  animation: ${rise} ${({ theme }) => `${theme.motion.enter} ${theme.motion.out}`} backwards;
-  animation-delay: ${({ $order }) => `${120 + $order * 70}ms`};
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.accentPale};
-    border-color: ${({ theme }) => theme.colors.accent};
-  }
-
-  &:active {
-    box-shadow: none;
-  }
-`;
-
-const ChoiceNum = styled.span`
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 2.5rem;
-  height: 2.5rem;
-  font-family: ${({ theme }) => theme.fonts.display};
-  font-size: ${({ theme }) => theme.text.lg};
-  color: ${({ theme }) => theme.colors.ink};
-  background: ${({ theme }) => theme.colors.sun};
-  border-radius: 50%;
 `;
 
 export default function InteractiveStoryScreen() {
@@ -213,23 +219,40 @@ export default function InteractiveStoryScreen() {
   if (!(step >= 1)) return <Navigate to="/character-select" replace state={{ flowLost: true }} />;
 
   return (
-    <BaseScreenLayout bare progressText={`${step}장 / ${TOTAL_STEPS}장`} progressCurrent={step} progressTotal={TOTAL_STEPS}>
-      <Scene key={`scene-${step}`}>
-        <Art src={image} alt="장면 삽화" />
-        <Words>
+    <BaseScreenLayout
+      bare
+      progressCurrent={step}
+      progressTotal={TOTAL_STEPS}
+      progressUnit="장"
+    >
+      <Book key={`scene-${step}`}>
+        <ArtPage>
+          <Art src={image} alt="장면 삽화" />
+        </ArtPage>
+        <WordsPage>
           <StoryText>{story}</StoryText>
-          <Question>{question}</Question>
-        </Words>
-      </Scene>
-
-      <Choices key={`choices-${step}`}>
-        {(choices.length > 0 ? choices : ['다음']).map((opt, idx) => (
-          <Choice key={idx} type="button" $order={idx} onClick={() => handleOptionClick(opt)}>
-            <ChoiceNum aria-hidden="true">{idx + 1}</ChoiceNum>
-            {opt}
-          </Choice>
-        ))}
-      </Choices>
+          {question && (
+            <Ask>
+              <Asker $size="3.5rem" $fill="86%" aria-hidden="true">
+                <img src={dokkaebiAsk} alt="" />
+              </Asker>
+              <Question>{question}</Question>
+            </Ask>
+          )}
+          {/* 고를 것이 없는 장면은 번호 없는 '다음' 버튼 하나만 둔다 */}
+          {choices.length > 0 ? (
+            <Choices>
+              {choices.map((opt, idx) => (
+                <ChoiceButton key={idx} index={idx} text={opt} onClick={() => handleOptionClick(opt)} />
+              ))}
+            </Choices>
+          ) : (
+            <RoundedButton type="button" $primary onClick={() => handleOptionClick('다음')}>
+              다음
+            </RoundedButton>
+          )}
+        </WordsPage>
+      </Book>
 
       {pending && <WaitingOverlay message="도깨비가 다음 장면을 그리고 있어요" elapsed={elapsed} />}
 

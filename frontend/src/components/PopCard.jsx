@@ -1,154 +1,88 @@
-import styled, { useTheme } from "styled-components";
-import { BsExclamationTriangleFill } from 'react-icons/bs';
+import { useId } from 'react';
+import styled from 'styled-components';
+import { DialogCard } from './Card';
+import { PaperFrame } from './BaseScreenLayout';
+import RoundedButton from './RoundedButton';
+import { CoverImg } from './Placeholder';
+import { WarnBadge } from './Notice';
 
-const CardContainer = styled.div`
+// 막 위에 띄우는 작은 흰 카드(그림 → 제목 → 부제 → 설명 → 버튼). 막(Overlay)은 부르는 화면이 그린다.
+// 긍정 버튼은 파랑($primary), danger면 빨강($danger). 부정 버튼은 보조. buttonDirection="column"이면 버튼을 세로로 쌓는다.
+// 높이는 내용에 맞춘다. imageSize는 그림 틀의 최대 폭(기본 12rem). positivePadding·negativePadding·fitContent는 예전 호출부와의 호환용으로만 받는다.
+
+const Panel = styled(DialogCard)`
   display: flex;
-  padding: 2rem;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 0.8rem;
-  border: ${({ theme }) => theme.border.thick};
-  border-radius: ${({ theme }) => theme.radius.card};
-  background: ${({ theme }) => theme.colors.surface};
-  font-family: ${({ theme }) => theme.fonts.body};
-  width: 268px;
-  height: 430px;
-
-  @media (max-width: 360px) {
-    width: 220px;
-    height: 370px;
-    padding: 1.25rem;
-  }
-
-  @media (min-width: 361px) and (max-width: 719px) {
-    width: 240px;
-    height: 400px;
-    padding: 1.5rem;
-  }
-
-  @media (min-width: 720px) and (max-width: 1079px) {
-    width: 260px;
-    height: 420px;
-  }
-
-  @media (min-width: 1080px) and (max-width: 1439px) {
-    width: 268px;
-    height: 430px;
-  }
-
-  @media (min-width: 1440px) {
-    width: 280px;
-    height: 440px;
-  }
-
-  /* fitContent: 높이를 내용에 맞춘다. &&로 위의 화면 폭별 높이 규칙보다 우선한다 */
-  ${({ $fitContent }) => $fitContent && '&& { height: auto; }'}
-`;
-
-const IMG = styled.img`
-  margin-top: -1rem;
-  width: ${(props) => props.imageWidth || '100%'};
-  aspect-ratio: 2 / 3;
-  /* 카드 높이가 고정이라 부제·설명·버튼이 들어갈 자리만큼 그림이 줄어든다(비율은 object-fit이 지킨다) */
-  min-height: 0;
-  object-fit: contain;
-  border-radius: ${(props) => props.cornerRadius || '10px'};
-  background-color: transparent;
-`;
-
-const Title = styled.div`
-  color: ${({ color, theme }) => color || theme.colors.ink};
-  font-family: ${({ theme }) => theme.fonts.display};
+  gap: ${({ theme }) => theme.space[3]};
+  max-height: calc(100dvh - 2 * ${({ theme }) => theme.space[4]});
+  overflow-y: auto;
+  overscroll-behavior: contain;
   text-align: center;
-  font-size: ${(props) => props.fontSize || '1rem'};
-  font-weight: 700;
-
-  @media (max-width: 360px) {
-    font-size: 0.85rem;
-  }
-
-  @media (min-width: 361px) and (max-width: 719px) {
-    font-size: 0.9rem;
-  }
-
-  @media (min-width: 720px) and (max-width: 1079px) {
-    font-size: 0.95rem;
-  }
-
-  /* fitContent 카드: 낱말 중간에서 줄을 바꾸지 않는다 */
-  ${({ $fitContent }) => $fitContent && 'word-break: keep-all;'}
 `;
 
-/* 부제(날짜 등)와 설명(줄거리, 삭제 경고). 보조 글자라 inkSoft(흰 칸 대비 5.9:1), 크기는 theme.text 단계 */
-const SubTitle = styled.div`
-  color: ${({ theme }) => theme.colors.inkSoft};
-  text-align: center;
+const Frame = styled(PaperFrame)`
+  flex: none;
+  max-width: ${({ $maxWidth }) => $maxWidth || '12rem'};
+  margin: 0 auto ${({ theme }) => theme.space[2]};
+`;
+
+const Art = styled(CoverImg)`
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  object-position: top;
+  border-radius: ${({ theme, $radius }) => $radius || theme.radius.art};
+  background: ${({ theme }) => theme.colors.surface2};
+`;
+
+// 경고 표시: 옅은 빨강 원 안의 빨간 세모(공통 WarnBadge)
+const Warn = styled(WarnBadge)`
+  margin-bottom: ${({ theme }) => theme.space[1]};
+`;
+
+// 제목과 부제(날짜)는 한 덩어리로 붙여 둔다
+const Heading = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space[1]};
+`;
+
+const Title = styled.h2`
+  font-size: ${({ theme }) => theme.text.xl};
+  color: ${({ $color, theme }) => $color || theme.colors.ink};
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+`;
+
+// 부제(날짜): 흰 카드 위라 inkMuted(4.62:1)
+const SubTitle = styled.p`
+  color: ${({ theme }) => theme.colors.inkMuted};
   font-size: ${({ theme }) => theme.text.sm};
-  font-weight: 500;
   line-height: ${({ theme }) => theme.leading.tight};
-  word-break: keep-all;
 `;
 
-const Description = styled.div`
+const Description = styled.p`
   color: ${({ theme }) => theme.colors.inkSoft};
-  text-align: center;
-  font-size: ${({ theme }) => theme.text.sm};
-  font-weight: 400;
-  line-height: ${({ theme }) => theme.leading.tight};
+  font-size: ${({ theme }) => theme.text.base};
+  line-height: 1.6;
   white-space: pre-line;
-  word-break: keep-all;
 `;
 
+// 버튼 줄: 기본은 가로로 나란히(자리가 모자라면 아래로), column이면 세로로 쌓는다
 const ButtonContainer = styled.div`
   display: flex;
-  flex-direction: ${(props) => props.direction || 'row'};
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: ${({ $direction }) => ($direction === 'column' ? 'column' : 'row')};
+  flex-wrap: ${({ $direction }) => ($direction === 'column' ? 'nowrap' : 'wrap')};
+  gap: ${({ theme }) => theme.space[3]};
   align-self: stretch;
-`;
+  margin-top: ${({ theme }) => theme.space[3]};
 
-const PositiveButton = styled.button`
-  display: flex;
-  padding: ${(props) => props.padding || '0.25rem 1rem'};
-  justify-content: center;
-  align-items: center;
-  align-self: stretch;
-  border-radius: ${({ theme }) => theme.radius.btn};
-  border: none;
-  /* $danger: 삭제처럼 되돌릴 수 없는 동작은 빨간펜 바탕에 흰 글자(5.53:1) */
-  background: ${({ $danger, theme }) => ($danger ? theme.colors.redpen : theme.colors.accent)};
-  color: ${({ $danger, theme }) => ($danger ? theme.colors.surface : theme.colors.accentInk)};
-  font-family: ${({ theme }) => theme.fonts.display};
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-
-  @media (max-width: 360px) {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.75rem;
-  }
-`;
-
-const NegativeButton = styled.button`
-  display: flex;
-  padding: ${(props) => props.padding || '0.25rem 1rem'};
-  justify-content: center;
-  align-items: center;
-  align-self: stretch;
-  border-radius: ${({ theme }) => theme.radius.btn};
-  border: ${({ theme }) => theme.border.thick};
-  background: ${({ theme }) => theme.colors.surface};
-  color: ${({ theme }) => theme.colors.ink};
-  font-family: ${({ theme }) => theme.fonts.display};
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-
-  @media (max-width: 360px) {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.75rem;
+  /* 가로 줄에서만 폭을 나눠 갖는다(세로로 쌓을 때 flex-basis가 높이가 되지 않게) */
+  & > * {
+    flex: ${({ $direction }) => ($direction === 'column' ? 'none' : '1 1 7rem')};
+    min-width: 0;
   }
 `;
 
@@ -164,53 +98,58 @@ export default function PopCard({
   negativeBtnText,
   onPositiveClick,
   onNegativeClick,
-  positivePadding,
-  negativePadding,
+  positivePadding, // 호환용(쓰지 않음): 버튼 크기는 RoundedButton이 정한다
+  negativePadding, // 호환용(쓰지 않음)
   danger = false,
   useWarningIcon = false,
-  fitContent = false,
+  fitContent = false, // 호환용(쓰지 않음): 높이는 늘 내용에 맞춘다
+  buttonDirection,
 }) {
-  const theme = useTheme();
+  const uid = useId();
+  const titleId = `${uid}-title`;
+  const descId = `${uid}-desc`;
+
   return (
-    <CardContainer $fitContent={fitContent}>
-    {imageSrc ? (
-     <IMG
-     src={imageSrc}
-     imageWidth={imageSize || '100%'}
-     cornerRadius={cornerRadius || '0.625rem'}
-     isCharacter={false}
-   />
-   
-    ) : useWarningIcon ? (
-      <BsExclamationTriangleFill size={50} color={theme.colors.redpen} />
-    ) : null}
-  
-    <Title color={titleColor} $fitContent={fitContent}>{cardTitle}</Title>
-    {subTitle && <SubTitle>{subTitle}</SubTitle>}
-    {description && <Description>{description}</Description>}
-    {/* fitContent 카드는 버튼이 없으면 버튼 줄을 그리지 않는다(빈 줄이 아래 여백을 늘린다) */}
-    {(!fitContent || positiveBtnText || negativeBtnText) && (
-    <ButtonContainer>
-      {positiveBtnText && (
-        <PositiveButton
-          padding={positivePadding}
-          $danger={danger}
-          onClick={onPositiveClick}
-        >
-          {positiveBtnText}
-        </PositiveButton>
+    <Panel
+      $maxWidth="22rem"
+      role="dialog"
+      aria-labelledby={cardTitle ? titleId : undefined}
+      aria-describedby={description ? descId : undefined}
+    >
+      {imageSrc ? (
+        <Frame $maxWidth={imageSize}>
+          <Art src={imageSrc} alt="" $radius={cornerRadius} />
+        </Frame>
+      ) : useWarningIcon ? (
+        <Warn />
+      ) : null}
+
+      {(cardTitle || subTitle) && (
+        <Heading>
+          {cardTitle && (
+            <Title id={titleId} $color={titleColor}>
+              {cardTitle}
+            </Title>
+          )}
+          {subTitle && <SubTitle>{subTitle}</SubTitle>}
+        </Heading>
       )}
-      {negativeBtnText && (
-        <NegativeButton
-          padding={negativePadding}
-          onClick={onNegativeClick}
-        >
-          {negativeBtnText}
-        </NegativeButton>
+      {description && <Description id={descId}>{description}</Description>}
+
+      {(positiveBtnText || negativeBtnText) && (
+        <ButtonContainer $direction={buttonDirection}>
+          {positiveBtnText && (
+            <RoundedButton type="button" $inline $primary={!danger} $danger={danger} onClick={onPositiveClick}>
+              {positiveBtnText}
+            </RoundedButton>
+          )}
+          {negativeBtnText && (
+            <RoundedButton type="button" $inline onClick={onNegativeClick}>
+              {negativeBtnText}
+            </RoundedButton>
+          )}
+        </ButtonContainer>
       )}
-    </ButtonContainer>
-    )}
-  </CardContainer>
-  
+    </Panel>
   );
 }
