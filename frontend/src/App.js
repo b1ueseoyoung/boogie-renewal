@@ -54,7 +54,8 @@ function PrivateRoute() {
     };
   }, [user, setUser]);
 
-  if (!checked) return null;
+  // setUser가 effect를 다시 돌려 cancelled가 되면 finally의 setChecked가 건너뛰어지므로, user가 있으면 확인이 끝난 것으로 본다
+  if (!user && !checked) return null;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   return <Outlet />;
 }
