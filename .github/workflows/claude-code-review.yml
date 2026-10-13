@@ -26,8 +26,6 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # 리뷰가 시작 직후 is_error로 끝나는 원인을 보려고 잠깐 켠다(시크릿은 로그에서 가려진다). 원인을 찾으면 끈다
-          show_full_output: true
           plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
           plugins: "code-review@claude-code-plugins"
           # Read diffs up to 150k characters (default 30k) so mid-size PRs are reviewed in full.
