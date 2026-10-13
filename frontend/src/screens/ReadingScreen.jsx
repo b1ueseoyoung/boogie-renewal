@@ -3,7 +3,7 @@ import { speak, stopSpeaking } from '../utils/speak';
 import styled from 'styled-components';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HTMLFlipBook from 'react-pageflip';
-import { IoHomeOutline } from 'react-icons/io5';
+import { IoChevronBack, IoHomeOutline } from 'react-icons/io5';
 import BaseScreenLayout, { SunDisc } from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
 import Dialog from '../components/Dialog';
@@ -153,6 +153,13 @@ const SkeletonText = styled.span`
 `;
 
 // 다 읽은 책 이름: 안내 글(inkSoft regular) 사이에서 ink semibold로 드러낸다
+// 읽기 화면을 연 목록. 여기서 열었으면 나가기 버튼이 그 목록으로 돌아가는 뒤로가기가 되고,
+// 홈·동화 완성 직후·주소로 바로 연 경우는 '홈으로'다(완성 직후 뒤로 가면 만들기 흐름으로 돌아가므로)
+const BACK_TO = {
+  bookshelf: { path: '/bookshelf', label: '책장으로' },
+  favorite: { path: '/favorite', label: '즐겨찾기로' },
+};
+
 // 투명 버튼이라 안쪽 여백만큼 왼쪽으로 내어, 아이콘이 아래 진행 표시·책과 같은 왼쪽 선에 오게 한다
 // ($inline의 margin 0보다 우선하게 클래스를 세 번 적는다)
 const HomeButton = styled(RoundedButton)`
@@ -369,8 +376,10 @@ const toggleTTS = () => {
     [texts, images, narrow]
   );
 
-  // 읽는 중에도 홈으로 나갈 수 있게 머리줄 왼쪽에 둔다. 읽어주기 소리는 멈추고 나간다
-  const homeButton = (
+  // 읽는 중에도 나갈 수 있게 머리줄 왼쪽에 둔다. 읽어주기 소리는 멈추고 나간다.
+  // 목록에서 열었으면 뒤로가기(목록의 거르기·스크롤이 남도록 history를 되돌린다. 되돌릴 기록이 없으면 그 목록 주소로)
+  const backTo = BACK_TO[location.state?.from];
+  const exitButton = (
     <HomeButton
       type="button"
       $quiet
@@ -378,11 +387,13 @@ const toggleTTS = () => {
       $inline
       onClick={() => {
         stopAudio();
-        navigate('/');
+        if (!backTo) navigate('/');
+        else if (window.history.state?.idx > 0) navigate(-1);
+        else navigate(backTo.path);
       }}
     >
-      <IoHomeOutline aria-hidden="true" />
-      홈으로
+      {backTo ? <IoChevronBack aria-hidden="true" /> : <IoHomeOutline aria-hidden="true" />}
+      {backTo ? backTo.label : '홈으로'}
     </HomeButton>
   );
 
@@ -396,7 +407,7 @@ const toggleTTS = () => {
 
   if (!texts.length || !images.length) {
     return (
-      <BaseScreenLayout bare title={titleFromQuery || undefined} headStart={homeButton}>
+      <BaseScreenLayout bare title={titleFromQuery || undefined} headStart={exitButton}>
         <BookSkeleton role="status">
           <ArtSkeleton />
           <SkeletonText>불러오는 중</SkeletonText>
@@ -412,7 +423,7 @@ const toggleTTS = () => {
       progressCurrent={spread}
       progressTotal={texts.length}
       progressUnit="장"
-      headStart={homeButton}
+      headStart={exitButton}
     >
       <Stage ref={stageRef}>
         {pageSize && (
