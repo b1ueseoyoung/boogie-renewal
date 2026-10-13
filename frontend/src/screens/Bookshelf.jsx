@@ -265,7 +265,9 @@ export default function Bookshelf() {
                 $primary
                 onClick={() => {
                   handleClosePopup();
-                  navigate(`/reading?file=${encodeURIComponent(selectedStory.content)}&title=${encodeURIComponent(selectedTitle)}`);
+                  navigate(`/reading?file=${encodeURIComponent(selectedStory.content)}&title=${encodeURIComponent(selectedTitle)}`, {
+                    state: { from: 'bookshelf' }, // 읽기 화면의 나가기 버튼이 '책장으로'(뒤로가기)가 된다
+                  });
                 }}
               >
                 열기

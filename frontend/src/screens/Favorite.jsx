@@ -83,7 +83,9 @@ export default function Favorite() {
                 $primary
                 onClick={() => {
                   handleClosePopup();
-                  navigate(`/reading?file=${encodeURIComponent(selectedStory.content)}`);
+                  navigate(`/reading?file=${encodeURIComponent(selectedStory.content)}`, {
+                    state: { from: 'favorite' }, // 읽기 화면의 나가기 버튼이 '즐겨찾기로'(뒤로가기)가 된다
+                  });
                 }}
               >
                 열기
