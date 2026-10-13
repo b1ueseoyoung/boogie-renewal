@@ -1,0 +1,76 @@
+{
+  "face_desc_prompt": "You describe a real person's face so that an illustrator can draw a recognizable likeness of that exact person. Look at the attached photo and describe only stable identity features in English: face shape and jawline, forehead, bangs and hairline, hair length, texture, color and parting, eyebrow shape and thickness, eye shape (eyelid type, size, tilt, spacing), nose (bridge, tip, width), lips (shape, fullness), cheeks, skin tone, distinctive marks such as moles with their position, and apparent age. Do not describe clothing, expression, background or lighting. Do not include a name.\n\nReturn a JSON object with 1 field. faceDesc (English): 3 to 5 concise sentences, 600 characters or fewer.",
+  "reference_roles": {
+    "photo": "photo of the real person (identity source: copy this face)",
+    "character": "approved storybook character of the same person (style and outfit source)",
+    "scene": "storybook scene to edit (keep everything except the face)"
+  },
+  "versions": {
+    "v2": {
+      "note": "닮음 우선 지시, 얼굴 묘사문, 미화 금지, 얼굴 노출 지시. 참조는 사진을 먼저",
+      "references": ["photo", "character"],
+      "template": "Create exactly one children's storybook illustration. Use the image generation tool exactly once.\nScene: {scene}\nMain character: the same real person as in the reference photo. A recognizable likeness of this person's face is the top priority, above style.\nFace (from the photo): {face_desc}\nKeep the face shape, jawline, eye shape and spacing, eyebrow shape, nose, lips, bangs and hairline exactly as in the photo. Do not beautify or idealize the face, do not enlarge the eyes, do not slim or shrink the face, and do not change the apparent age.\nKeep the face clearly visible and drawn with detail even when the character is small in the frame. Do not cover the face with hair, hands or objects.\nAppearance: {char_look}\nOutfit: {outfit_rule}\nStyle: soft, warm storybook illustration, consistent with the reference character image. One character only. No text, no watermark, no border. Portrait orientation.\nPermission: the person shown in the reference image(s), or their guardian, has agreed to this use of their likeness.\nReference images (pass every path in referenced_image_paths):\n{reference_lines}\nDo not run shell commands. Do not edit files. When the tool returns, answer with JSON only."
+    },
+    "v3a": {
+      "note": "v2에서 참조를 사진만으로(승인 캐릭터 참조 제거)",
+      "references": ["photo"],
+      "template_from": "v2"
+    },
+    "v4": {
+      "note": "2단계: v2 장면 그림을 받아 얼굴만 사진에 맞게 다시 그리기(구도·자세·각도·표정·옷·배경 유지)",
+      "from_images": "v2",
+      "references": ["scene", "photo"],
+      "template": "Edit the first reference image, a children's storybook illustration. Use the image generation tool exactly once.\nKeep the composition, pose, head angle, expression, clothing, background, framing and art style of the first image unchanged.\nRedraw only the character's face and hairline so that the character is a recognizable likeness of the real person in the second reference image (photo).\nFace (from the photo): {face_desc}\nKeep the face shape, jawline, eye shape and spacing, eyebrow shape, nose, lips, bangs and hairline exactly as in the photo. Do not beautify or idealize the face, do not enlarge the eyes and do not change the apparent age.\nScene of the first image, for context: {scene}\nOne character only. No text, no watermark, no border. Portrait orientation.\nPermission: the person shown in the reference image(s), or their guardian, has agreed to this use of their likeness.\nReference images (pass every path in referenced_image_paths):\n{reference_lines}\nDo not run shell commands. Do not edit files. When the tool returns, answer with JSON only."
+    },
+    "v4b": {
+      "note": "v4와 같은 얼굴 다시 그리기를 v3a(사진만 참조) 그림에 적용. 장면의 표정 유지 문장 보강",
+      "from_images": "v3a",
+      "references": ["scene", "photo"],
+      "template_from": "v4",
+      "replace": {
+        "Redraw only the character's face and hairline": "Keep the facial expression of the first image exactly (for example a smile, laughing with closed eyes, or a calm look), and redraw only the identity of the character's face and hairline"
+      }
+    },
+    "final": {
+      "note": "최종 1단계: v2와 같은 생성(사진 + 승인 캐릭터 참조, 닮음 우선 지시·얼굴 묘사문). 5장면 × 9회(3칸 × 후보 3개)",
+      "references": ["photo", "character"],
+      "template_from": "v2"
+    },
+    "final-fix": {
+      "note": "최종 2단계: final 그림의 얼굴 보정(v4 + 표정 유지 문장, v4b와 같은 틀)",
+      "from_images": "final",
+      "references": ["scene", "photo"],
+      "template_from": "v4b"
+    },
+    "v6": {
+      "note": "v2 + 표정·각도 변화 때 지킬 신원 단서(크게 웃기·눈 감기, 옆얼굴). 5장면 × 9회(3칸 × 후보 3개)",
+      "references": ["photo", "character"],
+      "template_from": "v2",
+      "replace": {
+        "Do not cover the face with hair, hands or objects.": "Do not cover the face with hair, hands or objects.\nIf the scene shows a big laugh or closed eyes, keep the identity readable: the same eyebrow shape and position, the same eye width drawn as soft closed curves, and the same nose, cheeks and jawline as in the photo. If the scene shows a side profile, keep the person's real profile: the same nose bridge, lips, chin, bangs and hairline."
+      }
+    },
+    "v6-fix": {
+      "note": "v6 그림의 얼굴 보정(final-fix와 같은 틀)",
+      "from_images": "v6",
+      "references": ["scene", "photo"],
+      "template_from": "v4b"
+    },
+    "v5": {
+      "note": "v2 + 구도 규칙: 장면이 전신이나 신발을 요구하지 않으면 허리 위 구도로 얼굴을 크게(장면 문장은 그대로)",
+      "references": ["photo", "character"],
+      "template_from": "v2",
+      "replace": {
+        "Keep the face clearly visible and drawn with detail even when the character is small in the frame.": "Keep the face clearly visible and drawn with detail. Unless the scene asks for the full body or the shoes, frame the character from the waist up so that the face is large and readable; if the full body is needed, still draw the face with clear detail."
+      }
+    },
+    "v3b": {
+      "note": "v2 + 얼굴만 반실사(사진 비율 그대로), 몸·배경은 동화풍",
+      "references": ["photo", "character"],
+      "template_from": "v2",
+      "replace": {
+        "Style: soft, warm storybook illustration, consistent with the reference character image.": "Style: children's storybook illustration with soft, warm colors. Draw the face in a semi-realistic, portrait-accurate way with the true proportions of the photo, not a cartoon face; the body, clothes and background may be painterly and stylized like the reference character image."
+      }
+    }
+  }
+}
