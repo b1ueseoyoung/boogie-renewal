@@ -3,6 +3,7 @@ import { speak, stopSpeaking } from '../utils/speak';
 import styled from 'styled-components';
 import { useNavigate, useLocation } from 'react-router-dom';
 import HTMLFlipBook from 'react-pageflip';
+import { IoHomeOutline } from 'react-icons/io5';
 import BaseScreenLayout, { SunDisc } from '../components/BaseScreenLayout';
 import RoundedButton from '../components/RoundedButton';
 import Dialog from '../components/Dialog';
@@ -152,6 +153,14 @@ const SkeletonText = styled.span`
 `;
 
 // 다 읽은 책 이름: 안내 글(inkSoft regular) 사이에서 ink semibold로 드러낸다
+// 투명 버튼이라 안쪽 여백만큼 왼쪽으로 내어, 아이콘이 아래 진행 표시·책과 같은 왼쪽 선에 오게 한다
+// ($inline의 margin 0보다 우선하게 클래스를 세 번 적는다)
+const HomeButton = styled(RoundedButton)`
+  &&& {
+    margin-left: calc(-1 * ${({ theme }) => theme.space[4]});
+  }
+`;
+
 const BookName = styled.span`
   font-family: ${({ theme }) => theme.fonts.display};
   font-weight: ${({ theme }) => theme.weight.semibold};
@@ -360,6 +369,23 @@ const toggleTTS = () => {
     [texts, images, narrow]
   );
 
+  // 읽는 중에도 홈으로 나갈 수 있게 머리줄 왼쪽에 둔다. 읽어주기 소리는 멈추고 나간다
+  const homeButton = (
+    <HomeButton
+      type="button"
+      $quiet
+      $size="sm"
+      $inline
+      onClick={() => {
+        stopAudio();
+        navigate('/');
+      }}
+    >
+      <IoHomeOutline aria-hidden="true" />
+      홈으로
+    </HomeButton>
+  );
+
   if (loadError) {
     return (
       <BaseScreenLayout bare>
@@ -370,7 +396,7 @@ const toggleTTS = () => {
 
   if (!texts.length || !images.length) {
     return (
-      <BaseScreenLayout bare title={titleFromQuery || undefined}>
+      <BaseScreenLayout bare title={titleFromQuery || undefined} headStart={homeButton}>
         <BookSkeleton role="status">
           <ArtSkeleton />
           <SkeletonText>불러오는 중</SkeletonText>
@@ -380,7 +406,14 @@ const toggleTTS = () => {
   }
 
   return (
-    <BaseScreenLayout bare title={title} progressCurrent={spread} progressTotal={texts.length} progressUnit="장">
+    <BaseScreenLayout
+      bare
+      title={title}
+      progressCurrent={spread}
+      progressTotal={texts.length}
+      progressUnit="장"
+      headStart={homeButton}
+    >
       <Stage ref={stageRef}>
         {pageSize && (
           <Book data-qa="book-spread">

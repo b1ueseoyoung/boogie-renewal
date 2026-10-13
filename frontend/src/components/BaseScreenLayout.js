@@ -66,6 +66,14 @@ const Head = styled.header`
   margin-bottom: ${({ theme }) => theme.space[5]};
 `;
 
+// 머리줄 왼쪽 묶음: 나가기 버튼(headStart) + 화면 제목. 제목이 길면 이 묶음 안에서 줄을 바꾼다
+const HeadMain = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.space[3]};
+  min-width: 0;
+`;
+
 // 진행 표시가 혼자 있으면(제목 없는 이야기 화면) 오른쪽 끝에 둔다. 제목과 함께라면 줄이 바뀌었을 때 왼쪽에서 시작한다
 const Progress = styled.div`
   display: flex;
@@ -230,6 +238,7 @@ const BaseScreenLayout = ({
   nav = false, // 메뉴 막대 자리: 막대가 있는 경로(BottomNav의 navItems)에서만 true. 지금 그런 화면은 PageShell을 쓴다
   maxWidth, // 페이지 폭(기본 theme.layout.page). 한 열짜리 짧은 화면은 '48rem'처럼 줄인다
   brand, // 카드 맨 위에 둘 상표(로그인·가입의 <AuthBrand />)
+  headStart, // 머리줄 맨 왼쪽, 제목 앞에 둘 노드(읽기 화면의 '홈으로' 버튼)
 }) => {
   const asideNode =
     aside ||
@@ -247,11 +256,16 @@ const BaseScreenLayout = ({
     <Page $nav={nav} $maxWidth={maxWidth}>
       <Screen $bare={bare}>
         {brand && <Brand>{brand}</Brand>}
-        {(title || hasProgress) && (
+        {(title || hasProgress || headStart) && (
           <Head>
-            {title && <Title>{title}</Title>}
+            {(headStart || title) && (
+              <HeadMain>
+                {headStart}
+                {title && <Title>{title}</Title>}
+              </HeadMain>
+            )}
             {hasProgress && (
-              <Progress $alone={!title}>
+              <Progress $alone={!title && !headStart}>
                 <Step aria-current="step">{stepText}</Step>
                 {hasCount && <StepDots current={progressCurrent} total={progressTotal} valueText={stepText} />}
               </Progress>
